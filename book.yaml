@@ -1,0 +1,127 @@
+# Book metadata — single source of truth for EPUB generation and store uploads.
+# Used by: rx-pub convert (auto-detected next to input HTML)
+# Source: https://kritiki.gr/product/diethneis-sxeseis-2/
+
+# ── Core identification ──────────────────────────────────────────────────────
+title: "Διεθνείς σχέσεις και πολιτική στην παγκόσμια εποχή"
+subtitle: ""
+language: el
+isbn: ""                                  # TODO: EPUB ISBN — pending assignment by Κριτική
+print-isbn: "978-960-586-530-6"           # emitted as <dc:source>
+edition: 2                                # 2η ελληνική έκδοση
+
+# ── Creators ─────────────────────────────────────────────────────────────────
+# MARC relator codes: aut (author), trl (translator), edt (editor / Επιμέλεια)
+# https://www.loc.gov/marc/relators/relaterm.html
+creators:
+  - name: "Andrew Heywood"
+    role: aut
+    file-as: "Heywood, Andrew"
+  - name: "Ben Whitham"
+    role: aut
+    file-as: "Whitham, Ben"
+  # Επιμέλεια
+  - name: "Ευάγγελος Σίσκος"
+    role: edt
+    file-as: "Σίσκος, Ευάγγελος"
+  - name: "Ανδρέας Στεργίου"
+    role: edt
+    file-as: "Στεργίου, Ανδρέας"
+  - name: "Αντωνία Ζερβάκη"
+    role: edt
+    file-as: "Ζερβάκη, Αντωνία"
+  - name: "Νικόλαος Παπαναστασόπουλος"
+    role: edt
+    file-as: "Παπαναστασόπουλος, Νικόλαος"
+  - name: "Σοφία Τυπάλδου"
+    role: edt
+    file-as: "Τυπάλδου, Σοφία"
+  # Μετάφραση
+  - name: "Αιμιλία-Αλεξάνδρα Κρητικού"
+    role: trl
+    file-as: "Κρητικού, Αιμιλία-Αλεξάνδρα"
+  - name: "Έμιλυ Κρητικού"
+    role: trl
+    file-as: "Κρητικού, Έμιλυ"
+
+# ── Publisher ────────────────────────────────────────────────────────────────
+publisher: "Εκδόσεις Κριτική"
+publication-date: "2025"     # Έτος έκδοσης 2ης ελληνικής έκδοσης (1η: 2013)
+rights: "© 2025, 2013, Εκδόσεις Κριτική ΑΕ για την ελληνική γλώσσα σε όλο τον κόσμο"
+
+# ── Original work ────────────────────────────────────────────────────────────
+original-title: "Global Politics"
+original-language: en
+original-isbn: "978-1-350-32841-9"   # Bloomsbury 3rd ed. paperback (2023)
+original-edition: 3                  # 3rd English edition (Bloomsbury, 2023)
+# Other Bloomsbury 3rd-ed ISBNs (for reference, not emitted):
+#   978-1-350-32842-6 (HB) · 978-1-350-32843-3 (PDF) · 978-1-350-32844-0 (EPUB)
+
+# ── Subject / Classification ─────────────────────────────────────────────────
+# BISAC codes: https://www.bisg.org/complete-bisac-subject-headings-list
+subjects:
+  - "POL011000"   # POLITICAL SCIENCE / International Relations / General
+  - "POL045000"   # POLITICAL SCIENCE / Globalization
+  - "POL010000"   # POLITICAL SCIENCE / General
+
+# Free-text keywords (for store discoverability)
+keywords:
+  - διεθνείς σχέσεις
+  - παγκόσμια πολιτική
+  - διεθνής πολιτική
+  - κριτικές θεωρίες διεθνών σχέσεων
+  - μεταποικιακή θεωρία
+  - αποαποικιοποίηση
+  - φεμινισμός
+  - global politics
+  - international relations
+  - IR theory
+
+# ── Description ──────────────────────────────────────────────────────────────
+description: >
+  Η 2η έκδοση (τρίτη ξενόγλωσση) του βιβλίου Διεθνείς σχέσεις και πολιτική
+  στην παγκόσμια εποχή αποτελεί μια ολοκληρωμένη και επικαιροποιημένη
+  εισαγωγή στη μελέτη της πολιτικής στο παγκόσμιο επίπεδο, την οποία
+  επεξεργάστηκαν εκ νέου ο Andrew Heywood και ο Ben Whitham, με στόχο να
+  συμπεριλάβουν όλες τις σημαντικές αλλαγές τόσο στη θεωρία όσο και στην
+  πρακτική διάσταση των διεθνών σχέσεων.
+
+
+  Παρουσιάζεται ένα εντελώς νέο κεφάλαιο για τις κριτικές θεωρίες της
+  παγκόσμιας πολιτικής, ως αναγνώριση της σαφώς εντεινόμενης –και σταθερά
+  αυξανόμενης– επιρροής αυτών των θεωρήσεων τόσο στον ακαδημαϊκό κλάδο των
+  διεθνών σχέσεων όσο και στη δημόσια σφαίρα γενικότερα. Οι προσεγγίσεις
+  που εμπνέονται από τη μεταποικιακή θεωρία, τη διαδικασία της
+  αποαποικιοποίησης, την αντιμετώπιση του ρατσισμού και τον φεμινισμό
+  κατέχουν περίοπτη θέση και εξετάζονται σε μεγαλύτερο βάθος στο κεφάλαιο
+  για τις κριτικές θεωρίες αλλά και στο συνολικό κείμενο. Καλύπτεται πλέον
+  ένα ευρύτερο φάσμα σημαντικών πολιτικών στοχαστών παγκόσμιας εμβέλειας,
+  εννοιών και αναλύσεων, προκειμένου να περιγραφεί καλύτερα η τρέχουσα
+  κατάσταση. Η πραγμάτευση και η ανάλυση παγκόσμιων κοινωνικών κινημάτων,
+  από το Black Lives Matter μέχρι το #MeToo, ενσωματώνονται σε όλο το
+  βιβλίο, επιλογή που αποτυπώνει την ενισχυμένη σημασία τους στην
+  παγκόσμια πολιτική.
+
+
+  Το κεφάλαιο σχετικά με τα όπλα μαζικής καταστροφής έχει εμπλουτιστεί με
+  την εξέταση της χρήσης των χημικών όπλων, τα οποία χρησιμοποιούνται πιο
+  συχνά κατά την πρόσφατη ιστορία. Το κεφάλαιο που αφορά την παγκόσμια
+  πολιτική για το περιβάλλον έχει επικαιροποιηθεί ενσωματώνοντας τα
+  πρόσφατα γεγονότα και τα νέα περιβαλλοντικά κινήματα διαμαρτυρίας.
+
+# ── Series ───────────────────────────────────────────────────────────────────
+# series:
+#   name: "Political Science"
+#   position:
+
+# ── Cover ────────────────────────────────────────────────────────────────────
+# cover.jpg downloaded from Κριτική (836×1155). Run `rx-pub optimize-cover`
+# if a higher-resolution master becomes available; current size is the largest
+# version exposed by https://kritiki.gr/wp-content/uploads/2025/04/.
+cover: cover.jpg
+
+# ── Custom navigation lists ──────────────────────────────────────────────────
+# Uncomment when the cleaned HTML is ready and we know which extra lists apply.
+# nav-lists:
+#   - type: lof
+#   - type: lot
