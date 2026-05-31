@@ -1,0 +1,6 @@
+/* Book-specific overrides for bp-kritiki-2026-diethneis-sxeseis */
+
+/* Inline term-definition asides: grey background only, no accent border */
+aside.no-bar {
+	border: none;
+}
