@@ -1,6 +1,11 @@
 /* Book-specific overrides for bp-kritiki-2026-diethneis-sxeseis */
 
-/* Inline term-definition asides: grey background only, no accent border */
+/* Chapter-boundary asides (ΠΕΡΙΛΗΨΗ etc.): grey bg, no border */
 aside.no-bar {
 	border: none;
+}
+
+/* Inline term-definition asides: uniform thin border on all sides */
+aside.bg-g:not(.no-bar) {
+	border-left: 1px solid #444;
 }
