@@ -2,6 +2,10 @@
 # Used by: rx-pub convert (auto-detected next to input HTML)
 # Source: https://kritiki.gr/product/diethneis-sxeseis-2/
 
+# ── Pipeline status ───────────────────────────────────────────────────────────
+# Values: ready-to-pick | in-progress | in-review | done
+status: in-review
+
 # ── Core identification ──────────────────────────────────────────────────────
 title: "Διεθνείς σχέσεις και πολιτική στην παγκόσμια εποχή"
 subtitle: ""
