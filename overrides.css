@@ -4,3 +4,36 @@
 aside.bg-g {
 	border-left: 1px solid #444;
 }
+
+/* Key terms index: two-column list */
+ul.index-list {
+	columns: 2;
+	column-gap: 2.5em;
+	margin: 1.5em 0 0 0;
+	padding-left: 0;
+	list-style: none;
+}
+ul.index-list li {
+	margin-top: 0.2em;
+	break-inside: avoid;
+}
+@media (max-width: 900px) {
+	ul.index-list { columns: 1; }
+}
+
+/* ΓΕΓΟΝΟΤΑ tables: keep first column on one line */
+#table037 td:first-child,
+#table027 td:first-child,
+#table040 td:first-child,
+#table028 td:first-child,
+#table029 td:first-child,
+#table030 td:first-child,
+#table031 td:first-child,
+#table032 td:first-child,
+#table033 td:first-child,
+#table034 td:first-child,
+#table035 td:first-child,
+#table036 td:first-child,
+#table038 td:first-child {
+	white-space: nowrap;
+}
