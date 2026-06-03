@@ -16,10 +16,11 @@
 
    Provides:
    - Page layout (sidebar + main content flexbox)
-   - Sidebar TOC with Solarized Dark theme, collapsible sections,
+   - Sidebar TOC with Solarized Dark chrome, collapsible sections,
      level markers (● ○ ■), and indent guides
-   - Main content reading comfort (off-white background, dark grey text,
-     generous line-height, max-width for optimal reading measure)
+   - Three reading themes: Light / Sepia / Dark — toggled via buttons
+     in the sidebar, persisted with localStorage, OS dark-mode respected
+   - Active section highlight on scroll
    - Responsive overlay for narrow screens
    - Open/close buttons for the sidebar
 
@@ -27,7 +28,7 @@
    effect on the final EPUB.
    ============================================================================ */
 
-/* Solarized palette */
+/* Solarized palette — sidebar always uses these regardless of reading theme */
 :root {
   --sol-base03:  #002b36;
   --sol-base02:  #073642;
@@ -36,28 +37,127 @@
   --sol-base0:   #839496;
   --sol-base1:   #93a1a1;
   --sol-yellow:  #b58900;
-  --sol-orange:  #cb4b16;
   --sol-cyan:    #2aa198;
   --sol-blue:    #268bd2;
-  --sol-violet:  #6c71c4;
-  --sol-green:   #859900;
 }
 
-#rx-page-wrapper { display: flex; min-height: 100vh; background: #f8f8f6; }
+/* ─── Reading theme tokens ───────────────────────────────────────────────────
+   JS sets data-rx-theme on <html>. Default (no attribute) uses the media
+   query below so first-visit respects OS dark mode before JS fires.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --rx-page-bg:       #f8f8f6;
+  --rx-page-text:     #232323;
+  --rx-heading-color: #111111;
+  --rx-link-color:    var(--sol-blue);
+  --rx-toc-bg:        var(--sol-base03);
+  --rx-toc-border:    var(--sol-base02);
+  --rx-toc-open-bg:   var(--sol-base02);
+}
+
+/* OS dark mode — applies before JS runs on first visit */
+@media (prefers-color-scheme: dark) {
+  html:not([data-rx-theme]) {
+    --rx-page-bg:       var(--sol-base03);
+    --rx-page-text:     var(--sol-base0);
+    --rx-heading-color: var(--sol-base1);
+    --rx-link-color:    var(--sol-blue);
+    --rx-toc-bg:        #0d1117;
+    --rx-toc-border:    #1c2128;
+    --rx-toc-open-bg:   #1c2128;
+  }
+}
+
+[data-rx-theme="light"] {
+  --rx-page-bg:       #f8f8f6;
+  --rx-page-text:     #232323;
+  --rx-heading-color: #111111;
+  --rx-link-color:    var(--sol-blue);
+  --rx-toc-bg:        var(--sol-base03);
+  --rx-toc-border:    var(--sol-base02);
+  --rx-toc-open-bg:   var(--sol-base02);
+}
+
+[data-rx-theme="sepia"] {
+  --rx-page-bg:       #f5ead2;
+  --rx-page-text:     #3b2c1e;
+  --rx-heading-color: #1e0f00;
+  --rx-link-color:    #7a4f1e;
+  --rx-toc-bg:        #2a1f15;
+  --rx-toc-border:    #3d2e20;
+  --rx-toc-open-bg:   #3d2e20;
+}
+
+[data-rx-theme="dark"] {
+  --rx-page-bg:       var(--sol-base03);
+  --rx-page-text:     var(--sol-base0);
+  --rx-heading-color: var(--sol-base1);
+  --rx-link-color:    var(--sol-blue);
+  --rx-toc-bg:        #0d1117;
+  --rx-toc-border:    #1c2128;
+  --rx-toc-open-bg:   #1c2128;
+}
+
+/* Smooth transitions when switching themes */
+#rx-page-wrapper,
+#rx-main-content,
+#table-of-contents,
+#toc-open { transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease; }
+
+/* ─── Page layout ─────────────────────────────────────────────────────────── */
+#rx-page-wrapper { display: flex; min-height: 100vh; background: var(--rx-page-bg); }
 #rx-main-content {
   flex: 1; min-width: 0;
   padding: 2em 3em 2em 2.5em;
-  color: #232323;
+  color: var(--rx-page-text);
+  background: var(--rx-page-bg);
   line-height: 1.7;
   max-width: 52em;
 }
 
+/* Headings and links: theme-appropriate colors (light + sepia) */
+#rx-main-content h1, #rx-main-content h2, #rx-main-content h3,
+#rx-main-content h4, #rx-main-content h5, #rx-main-content h6 { color: var(--rx-heading-color); transition: color 0.25s ease; }
+#rx-main-content a { color: var(--rx-link-color); transition: color 0.25s ease; }
+
+/* ─── Dark mode: cascade reset ───────────────────────────────────────────────
+   The book stylesheet hardcodes dark text colors (#333, #444, #666) that are
+   unreadable on dark backgrounds. color:inherit cascades them all up to
+   #rx-main-content (var(--rx-page-text)), then specific elements are re-applied.
+   ─────────────────────────────────────────────────────────────────────────── */
+[data-rx-theme="dark"] #rx-main-content * { color: inherit; }
+[data-rx-theme="dark"] #rx-main-content h1, [data-rx-theme="dark"] #rx-main-content h2,
+[data-rx-theme="dark"] #rx-main-content h3, [data-rx-theme="dark"] #rx-main-content h4,
+[data-rx-theme="dark"] #rx-main-content h5, [data-rx-theme="dark"] #rx-main-content h6 { color: var(--rx-heading-color); }
+[data-rx-theme="dark"] #rx-main-content a { color: var(--rx-link-color); }
+[data-rx-theme="dark"] #rx-main-content figcaption,
+[data-rx-theme="dark"] #rx-main-content caption,
+[data-rx-theme="dark"] #rx-main-content p.figure-figcaption,
+[data-rx-theme="dark"] #rx-main-content p.figure-caption,
+[data-rx-theme="dark"] #rx-main-content p.table-figcaption,
+[data-rx-theme="dark"] #rx-main-content p.table-caption { color: var(--sol-base1); }
+
+@media (prefers-color-scheme: dark) {
+  html:not([data-rx-theme]) #rx-main-content * { color: inherit; }
+  html:not([data-rx-theme]) #rx-main-content h1, html:not([data-rx-theme]) #rx-main-content h2,
+  html:not([data-rx-theme]) #rx-main-content h3, html:not([data-rx-theme]) #rx-main-content h4,
+  html:not([data-rx-theme]) #rx-main-content h5, html:not([data-rx-theme]) #rx-main-content h6 { color: var(--rx-heading-color); }
+  html:not([data-rx-theme]) #rx-main-content a { color: var(--rx-link-color); }
+  html:not([data-rx-theme]) #rx-main-content figcaption,
+  html:not([data-rx-theme]) #rx-main-content caption,
+  html:not([data-rx-theme]) #rx-main-content p.figure-figcaption,
+  html:not([data-rx-theme]) #rx-main-content p.figure-caption,
+  html:not([data-rx-theme]) #rx-main-content p.table-figcaption,
+  html:not([data-rx-theme]) #rx-main-content p.table-caption { color: var(--sol-base1); }
+}
+
+/* ─── Sidebar ─────────────────────────────────────────────────────────────── */
 #table-of-contents {
   position: sticky; top: 0; align-self: flex-start;
   width: 300px; min-width: 300px; max-height: 100vh;
   overflow-y: auto; padding: 1.5em 1.2em 1em 2.5em;
-  background: var(--sol-base03);
-  border-right: 2px solid var(--sol-base02);
+  background: var(--rx-toc-bg);
+  border-right: 2px solid var(--rx-toc-border);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-size: 0.85em; line-height: 1.5; box-sizing: border-box;
   z-index: 10;
@@ -90,38 +190,40 @@
 }
 
 /* Typographic scale — distinct colors per level for contrast */
-#table-of-contents li.toc-h1 > a {
-  font-weight: 600; font-size: 1.05em;
-  color: var(--sol-base1);
-}
-#table-of-contents li.toc-h2 > a {
-  font-weight: 500; font-size: 0.95em;
-  color: var(--sol-cyan);
-}
-#table-of-contents li.toc-h3 > a {
-  font-weight: 400; font-size: 0.88em;
-  color: var(--sol-base0);
-}
-#table-of-contents li.toc-h4 > a {
-  font-weight: 400; font-size: 0.82em;
-  color: var(--sol-base00);
-}
+#table-of-contents li.toc-h1 > a { font-weight: 600; font-size: 1.05em; color: var(--sol-base1); }
+#table-of-contents li.toc-h2 > a { font-weight: 500; font-size: 0.95em; color: var(--sol-cyan); }
+#table-of-contents li.toc-h3 > a { font-weight: 400; font-size: 0.88em; color: var(--sol-base0); }
+#table-of-contents li.toc-h4 > a { font-weight: 400; font-size: 0.82em; color: var(--sol-base00); }
 
 /* Hover */
-#table-of-contents a:hover {
-  color: var(--sol-yellow);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
+#table-of-contents a:hover { color: var(--sol-yellow); text-decoration: underline; text-underline-offset: 2px; }
+
+/* Active section (currently scrolled into view) */
+#table-of-contents a.toc-active { color: var(--sol-yellow) !important; font-weight: 600; }
 
 /* Level markers — ● ○ ■ cycle, using level-appropriate colors */
 #table-of-contents li.toc-h2 > a::before { content: "●"; font-size: 0.75em; margin-right: 0.4em; vertical-align: middle; color: var(--sol-cyan); }
-#table-of-contents li.toc-h3 > a::before { content: "○"; font-size: 0.8em; margin-right: 0.4em; vertical-align: middle; color: var(--sol-base01); }
+#table-of-contents li.toc-h3 > a::before { content: "○"; font-size: 0.8em;  margin-right: 0.4em; vertical-align: middle; color: var(--sol-base01); }
 #table-of-contents li.toc-h4 > a::before { content: "■"; font-size: 0.65em; margin-right: 0.4em; vertical-align: middle; color: var(--sol-base01); }
-#table-of-contents li.toc-h5 > a::before { content: "●"; font-size: 0.6em; margin-right: 0.4em; vertical-align: middle; color: var(--sol-base01); }
+#table-of-contents li.toc-h5 > a::before { content: "●"; font-size: 0.6em;  margin-right: 0.4em; vertical-align: middle; color: var(--sol-base01); }
 #table-of-contents li.toc-h6 > a::before { content: "○"; font-size: 0.65em; margin-right: 0.4em; vertical-align: middle; color: var(--sol-base01); }
 
-/* Close / open buttons */
+/* ─── Theme switcher ──────────────────────────────────────────────────────── */
+.rx-theme-switcher { display: flex; gap: 0.4em; margin: 0 0 0.9em 0; }
+.rx-theme-btn {
+  background: var(--sol-base02);
+  border: 1px solid var(--sol-base01);
+  border-radius: 4px;
+  color: var(--sol-base0);
+  cursor: pointer;
+  font-size: 0.95em; line-height: 1;
+  padding: 0.3em 0.6em;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.rx-theme-btn:hover { background: var(--sol-base01); color: var(--sol-base1); }
+.rx-theme-btn--active { color: var(--sol-yellow); border-color: var(--sol-yellow); }
+
+/* ─── Sidebar close / open buttons ───────────────────────────────────────── */
 #toc-close {
   position: absolute; top: 0.4em; right: 0.5em;
   background: none; border: none; font-size: 1.1em;
@@ -130,12 +232,12 @@
 #toc-close:hover { color: var(--sol-base1); }
 #toc-open {
   display: none; position: fixed; top: 0.5em; left: 0.5em;
-  background: var(--sol-base02); border: 1px solid var(--sol-base01); border-radius: 4px;
+  background: var(--rx-toc-open-bg); border: 1px solid var(--sol-base01); border-radius: 4px;
   font-size: 1.3em; cursor: pointer; padding: 0.2em 0.5em;
   color: var(--sol-base1);
   z-index: 20; line-height: 1;
 }
-#toc-open:hover { background: var(--sol-base03); }
+#toc-open:hover { background: var(--rx-toc-bg); }
 
 /* Responsive: overlay on narrow screens */
 @media (max-width: 900px) {
@@ -148,22 +250,25 @@
   }
 }
 
-    </style>
+</style>
 <title>global-politics-work</title>
 <style>body { max-width: 100%; margin: 0 auto; }</style>
 </head>
 <body>
 <div id="rx-page-wrapper">
-<nav id="table-of-contents"><button aria-label="Close table of contents" id="toc-close" title="Close sidebar">✕</button>
+<nav id="table-of-contents">
+<button aria-label="Close table of contents" id="toc-close" title="Close sidebar">✕</button>
 <h2>Table of Contents</h2>
 <ul class="toc">
+<li class="toc-h1"><a href="#toc-endorsements">Εγκωμιαστικά σχόλια</a>
+</li>
 <li class="toc-h1"><a href="#toc-03d49a5d">Σελίδα τίτλου</a>
 </li>
 <li class="toc-h1"><a href="#toc-c2fca2aa">Copyright</a>
 </li>
 <li class="toc-h1"><a href="#toc-22ffad16">Σχετικά με τους συγγραφείς</a>
 </li>
-<li class="toc-h1"><a href="#toc-f7811c5a"><b>Υποστηρικτικό υλικό</b></a>
+<li class="toc-h1"><a href="#toc-f7811c5a">Υποστηρικτικό υλικό</a>
 <ul class="toc">
 <li class="toc-h2"><a href="#toc-88f5258c"><b>Διαφάνειες PowerPoint</b></a>
 </li>
@@ -173,9 +278,9 @@
 </li>
 </ul>
 </li>
-<li class="toc-h1"><a href="#toc-9a06a3c6"><b>Ευχαριστίες</b></a>
+<li class="toc-h1"><a href="#toc-9a06a3c6">Ευχαριστίες</a>
 </li>
-<li class="toc-h1"><a href="#toc-876b3511"><b>Πρόλογος στην παρούσα έκδοση</b></a>
+<li class="toc-h1"><a href="#toc-876b3511">Πρόλογος στην παρούσα έκδοση</a>
 </li>
 <li class="toc-h1"><a href="#toc-c756c62a">1 Εισαγωγή στην παγκόσμια πολιτική</a>
 <ul class="toc">
@@ -1143,9 +1248,10 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 </script>
 </nav>
-
 <button aria-label="Open table of contents" id="toc-open" title="Open table of contents">☰</button>
 <main id="rx-main-content">
+<section data-split="true" epub:type="other.frontmatter">
+<h1 class="title-front-back-matter visually-hidden" id="toc-endorsements">Εγκωμιαστικά σχόλια</h1>
 <p class="no-indent">«Σαφές, ευφυές, προσιτό και ενδιαφέρον – το σύγγραμμα των Heywood και Whitham αποτελεί σημείο αναφοράς στα εγχειρίδια παγκόσμιας πολιτικής».</p>
 <p class="right"><b>–Jane Verbitsky</b>, <i>Αναπληρώτρια Καθηγήτρια, Τεχνολογικό Πανεπιστήμιο του Όκλαντ, Νέα Ζηλανδία</i></p>
 <p class="no-indent">«Το βιβλίο<i> Διεθνείς σχέσεις και πολιτική στην παγκόσμια εποχή </i>αποτελεί μια νηφάλια πραγμάτευση μιας σειράς θεμάτων και ζητημάτων που αφορούν τις παγκόσμιες υποθέσεις, τις διεθνείς σχέσεις και την τεράστια ποικιλία των πολιτισμικών δυναμικών που εκδηλώνονται σε έναν ταχέως μεταβαλλόμενο κόσμο. Οι διεπιστημονικές δεξιότητες των συγγραφέων και η επίμονη προσήλωσή τους στην εξασφάλιση άρτιου αποτελέσματος αναδεικνύονται από την έμφαση στα στοιχεία της τοπικότητας και της χρονικότητας. Το βιβλίο αυτό είναι ένας ανεκτίμητος βοηθός στην ευγενή προσπάθεια να μετατρέψουμε τους φοιτητές μας σε επιτυχημένους αποφοίτους και επαγγελματίες με αποδεδειγμένη πνευματική οξύτητα. Το συνιστώ ανεπιφύλακτα σε όποιον παθιάζεται με την εκπαίδευση μελλοντικών επιστημόνων και επαγγελματιών και την ανάδειξη πολιτών του κόσμου που θα φέρουν επάξια αυτόν τον χαρακτηρισμό.</p>
@@ -1160,6 +1266,7 @@ document.addEventListener("DOMContentLoaded", function() {
 <p class="right"><b>–Paul S. Rowe</b>, <i>Καθηγητής Πολιτικών και Διεθνών Σπουδών, Πανεπιστήμιο Τρίνιτι Γουέστερν, Καναδάς</i></p>
 <p class="no-indent">«Οι Heywood και Whitham έχουν κάνει εξαιρετική δουλειά σε αυτή την έκδοση. Το κείμενο έχει δεχτεί αναθεώρηση και επικαιροποίηση με σκοπό την πιο ενδελεχή εξέταση του πεδίου που πραγματεύεται και την απόκτηση πραγματικά παγκόσμιας στόχευσης. Περιλαμβάνει πλέον ένα διευρυμένο φάσμα θεμάτων και συζητήσεων και επικεντρώνεται σε μια ευρεία γκάμα θεωριών και πρόσφατων εξελίξεων. Το βιβλίο αυτό, η εξηγητική δύναμη του οποίου έχει ενισχυθεί με βασικές έννοιες, αναφορές σε διάφορους στοχαστές, εικόνες, καθώς και με διαφορετικές προσεγγίσεις, μελέτες περίπτωσης και οπτικές και την παρουσίαση διαφορετικών παγκόσμιων δρώντων, δεν συνιστά απλώς ένα εισαγωγικό εγχειρίδιο στις διεθνείς σχέσεις. Αυτή η νέα έκδοση θα αποτελέσει αναμφίβολα ένα σημαντικό σύγγραμμα, εμπνέοντας τους φοιτητές σε όλο τον κόσμο να συνεχίσουν τους σπουδές τους».</p>
 <p class="right"><b>–Tuba Kancı</b>, <i>Αναπληρωτής Καθηγητής Πολιτικής Επιστήμης, Πανεπιστήμιο του Κοτζαέλι, Τουρκία</i></p>
+</section>
 <section data-split="true" epub:type="titlepage">
 <h1 class="title-front-back-matter" id="toc-03d49a5d">Σελίδα τίτλου</h1>
 <p class="ni">ANDREW HEYWOOD, BEN WHITHAM</p>
@@ -1195,7 +1302,8 @@ document.addEventListener("DOMContentLoaded", function() {
 <p class="flush">Κεντρική διάθεση: Νευροκοπίου 8, 118 55 Αθήνα, τηλ.: 210 82 11 470</p>
 <p class="flush">e-mail: <a href="mailto:biblia@kritiki.gr">biblia@kritiki.gr</a></p>
 <p class="flush"><a href="http://www.kritiki.gr">www.kritiki.gr</a></p>
-<p class="flush">ΙSBN: 978-960-586-530-6</p>
+<p class="flush">ΙSBN: 978-960-586-530-6 (Έντυπο)</p>
+<p class="flush">ΙSBN: 978-960-586-565-8 (Ηλεκτρονικό)</p>
 <p class="center"><i>Ο Andrew Heywood αφιερώνει το βιβλίο στον Oliver, στη Freya, στον Dominic και στον Toby, τα εγγόνια του και επίδοξους πολίτες του κόσμου. <br/>
 <br/>Ο Ben Whitham αφιερώνει το βιβλίο αυτό σε όλους τους φοιτητές της παγκόσμιας πολιτικής ανά τον κόσμο. Σε αυτές τις ταραγμένες εποχές σε παγκόσμιο επίπεδο, καθώς οι ισχυροί προσπαθούν να επιβάλουν την τάξη, η μελέτη αυτού του αντικειμένου αποτελεί αναγκαιότητα αλλά και μια επαναστατική πράξη εκ μέρους σας. Επιπλέον, αφιερώνει το βιβλίο στη ζωντανή μνήμη της bell hooks (1952-2021), της οποίας οι έννοιες, η ανάλυση και το παιδαγωγικό όραμα θα συνεχίσουν να αποτελούν πηγή έμπνευσης στην προσπάθειά μας να κατανοούμε, να ασκούμε κριτική και κυρίως να</i> αλλάξουμε <i>την παγκόσμια πολιτική.</i></p>
 </section>
@@ -1687,24 +1795,44 @@ document.addEventListener("DOMContentLoaded", function() {
 <table id="table037">
 <tbody>
 <tr>
-<td><p class="no-indent"><b>3500 έως 1500 π.Χ.</b></p></td>
-<td><p class="no-indent">Οι πολιτισμοί των Σουμερίων, των Βαβυλωνίων και των Ασσυρίων. Ο πολιτισμός της αρχαίας Αιγύπτου.</p></td>
+<td>
+<p class="no-indent"><b>3500 έως 1500 π.Χ.</b></p>
+</td>
+<td>
+<p class="no-indent">Οι πολιτισμοί των Σουμερίων, των Βαβυλωνίων και των Ασσυρίων. Ο πολιτισμός της αρχαίας Αιγύπτου.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2600 έως 1900 π.Χ.</b></p></td>
-<td><p class="no-indent">Ο πρώτος πολιτισμός στη Νότια Ασία εμφανίστηκε στην κοιλάδα του ποταμού Ινδού, στο σημερινό Πακιστάν.</p></td>
+<td>
+<p class="no-indent"><b>2600 έως 1900 π.Χ.</b></p>
+</td>
+<td>
+<p class="no-indent">Ο πρώτος πολιτισμός στη Νότια Ασία εμφανίστηκε στην κοιλάδα του ποταμού Ινδού, στο σημερινό Πακιστάν.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1600 π.Χ.</b></p></td>
-<td><p class="no-indent">Η ίδρυση της δυναστείας των Shang σηματοδοτεί τις αρχές του κινεζικού πολιτισμού. Μετά την περίοδο των Εμπόλεμων Βασιλείων (403-221 π.Χ.), η Κίνα ενοποιήθηκε τελικά υπό τη δυναστεία των Ch'in (από όπου προέρχεται και το όνομα της χώρας).</p></td>
+<td>
+<p class="no-indent"><b>1600 π.Χ.</b></p>
+</td>
+<td>
+<p class="no-indent">Η ίδρυση της δυναστείας των Shang σηματοδοτεί τις αρχές του κινεζικού πολιτισμού. Μετά την περίοδο των Εμπόλεμων Βασιλείων (403-221 π.Χ.), η Κίνα ενοποιήθηκε τελικά υπό τη δυναστεία των Ch'in (από όπου προέρχεται και το όνομα της χώρας).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>800 έως 600 π.Χ.</b></p></td>
-<td><p class="no-indent">Εξαπλώνονται ελληνικοί οικισμοί σε όλη την Ανατολική Μεσόγειο, με τη δημιουργία αποικιών στη Μικρά Ασία, καθώς και στα νότια τμήματα των Βαλκανίων.</p></td>
+<td>
+<p class="no-indent"><b>800 έως 600 π.Χ.</b></p>
+</td>
+<td>
+<p class="no-indent">Εξαπλώνονται ελληνικοί οικισμοί σε όλη την Ανατολική Μεσόγειο, με τη δημιουργία αποικιών στη Μικρά Ασία, καθώς και στα νότια τμήματα των Βαλκανίων.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>509 π.Χ.</b></p></td>
-<td><p class="no-indent">Γεννήθηκε η αρχαία Ρώμη με την κατάλυση της μοναρχίας και την εγκαθίδρυση μιας ολιγαρχικής δημοκρατίας.</p></td>
+<td>
+<p class="no-indent"><b>509 π.Χ.</b></p>
+</td>
+<td>
+<p class="no-indent">Γεννήθηκε η αρχαία Ρώμη με την κατάλυση της μοναρχίας και την εγκαθίδρυση μιας ολιγαρχικής δημοκρατίας.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -2281,108 +2409,212 @@ document.addEventListener("DOMContentLoaded", function() {
 <table id="table040">
 <tbody>
 <tr>
-<td><p class="no-indent"><b>1991</b></p></td>
-<td><p class="no-indent">Ο Πόλεμος του Κόλπου (Ιανουάριος-Φεβρουάριος)</p></td>
+<td>
+<p class="no-indent"><b>1991</b></p>
+</td>
+<td>
+<p class="no-indent">Ο Πόλεμος του Κόλπου (Ιανουάριος-Φεβρουάριος)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1992</b></p></td>
-<td><p class="no-indent">Ξεσπά ο εμφύλιος πόλεμος στην πρώτη Γιουγκοσλαβία</p></td>
+<td>
+<p class="no-indent"><b>1992</b></p>
+</td>
+<td>
+<p class="no-indent">Ξεσπά ο εμφύλιος πόλεμος στην πρώτη Γιουγκοσλαβία</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1992</b></p></td>
-<td><p class="no-indent">Δημιουργείται η Ευρωπαϊκή Ένωση</p></td>
+<td>
+<p class="no-indent"><b>1992</b></p>
+</td>
+<td>
+<p class="no-indent">Δημιουργείται η Ευρωπαϊκή Ένωση</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1994</b></p></td>
-<td><p class="no-indent">Γενοκτονία στη Ρουάντα (Απρίλιος-Ιούλιος)</p></td>
+<td>
+<p class="no-indent"><b>1994</b></p>
+</td>
+<td>
+<p class="no-indent">Γενοκτονία στη Ρουάντα (Απρίλιος-Ιούλιος)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1994</b></p></td>
-<td><p class="no-indent">Ανατρέπεται το καθεστώς του απαρτχάιντ στη Νότια Αφρική (Σεπτέμβριος)</p></td>
+<td>
+<p class="no-indent"><b>1994</b></p>
+</td>
+<td>
+<p class="no-indent">Ανατρέπεται το καθεστώς του απαρτχάιντ στη Νότια Αφρική (Σεπτέμβριος)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1996</b></p></td>
-<td><p class="no-indent">Οι Ταλιμπάν καταλαμβάνουν την εξουσία στο Αφγανιστάν</p></td>
+<td>
+<p class="no-indent"><b>1996</b></p>
+</td>
+<td>
+<p class="no-indent">Οι Ταλιμπάν καταλαμβάνουν την εξουσία στο Αφγανιστάν</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1997-1998</b></p></td>
-<td><p class="no-indent">Η χρηματοπιστωτική κρίση της Ασίας</p></td>
+<td>
+<p class="no-indent"><b>1997-1998</b></p>
+</td>
+<td>
+<p class="no-indent">Η χρηματοπιστωτική κρίση της Ασίας</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1998</b></p></td>
-<td><p class="no-indent">Η Ινδία και το Πακιστάν πραγματοποιούν δοκιμές πυρηνικών όπλων</p></td>
+<td>
+<p class="no-indent"><b>1998</b></p>
+</td>
+<td>
+<p class="no-indent">Η Ινδία και το Πακιστάν πραγματοποιούν δοκιμές πυρηνικών όπλων</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1999</b></p></td>
-<td><p class="no-indent">Ο πόλεμος στο Κόσοβο</p></td>
+<td>
+<p class="no-indent"><b>1999</b></p>
+</td>
+<td>
+<p class="no-indent">Ο πόλεμος στο Κόσοβο</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2001</b></p></td>
-<td><p class="no-indent">Τρομοκρατικές επιθέσεις της 11ης Σεπτεμβρίου στις ΗΠΑ (βλ. σ. 49)</p></td>
+<td>
+<p class="no-indent"><b>2001</b></p>
+</td>
+<td>
+<p class="no-indent">Τρομοκρατικές επιθέσεις της 11ης Σεπτεμβρίου στις ΗΠΑ (βλ. σ. 49)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2001</b></p></td>
-<td><p class="no-indent">Εισβολή υπό την ηγεσία των ΗΠΑ στο Αφγανιστάν (Οκτώβριος)</p></td>
+<td>
+<p class="no-indent"><b>2001</b></p>
+</td>
+<td>
+<p class="no-indent">Εισβολή υπό την ηγεσία των ΗΠΑ στο Αφγανιστάν (Οκτώβριος)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2002</b></p></td>
-<td><p class="no-indent">Ιδρύεται το Διεθνές Ποινικό Δικαστήριο στη Χάγη</p></td>
+<td>
+<p class="no-indent"><b>2002</b></p>
+</td>
+<td>
+<p class="no-indent">Ιδρύεται το Διεθνές Ποινικό Δικαστήριο στη Χάγη</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2003</b></p></td>
-<td><p class="no-indent">Εισβολή υπό την ηγεσία των ΗΠΑ στο Ιράκ (Μάρτιος)</p></td>
+<td>
+<p class="no-indent"><b>2003</b></p>
+</td>
+<td>
+<p class="no-indent">Εισβολή υπό την ηγεσία των ΗΠΑ στο Ιράκ (Μάρτιος)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2006</b></p></td>
-<td><p class="no-indent">Η Βόρεια Κορέα πραγματοποιεί δοκιμή πυρηνικού όπλου</p></td>
+<td>
+<p class="no-indent"><b>2006</b></p>
+</td>
+<td>
+<p class="no-indent">Η Βόρεια Κορέα πραγματοποιεί δοκιμή πυρηνικού όπλου</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2008</b></p></td>
-<td><p class="no-indent">Η Ρωσία εισβάλλει στη Γεωργία</p></td>
+<td>
+<p class="no-indent"><b>2008</b></p>
+</td>
+<td>
+<p class="no-indent">Η Ρωσία εισβάλλει στη Γεωργία</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2007-2009</b></p></td>
-<td><p class="no-indent">Παγκόσμια χρηματοπιστωτική κρίση</p></td>
+<td>
+<p class="no-indent"><b>2007-2009</b></p>
+</td>
+<td>
+<p class="no-indent">Παγκόσμια χρηματοπιστωτική κρίση</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2010</b></p></td>
-<td><p class="no-indent">Γέννηση της Αραβικής Άνοιξης (Δεκέμβριος) (βλ. σ. 289)</p></td>
+<td>
+<p class="no-indent"><b>2010</b></p>
+</td>
+<td>
+<p class="no-indent">Γέννηση της Αραβικής Άνοιξης (Δεκέμβριος) (βλ. σ. 289)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2010-2013</b></p></td>
-<td><p class="no-indent">Κρίση της Ευρωζώνης</p></td>
+<td>
+<p class="no-indent"><b>2010-2013</b></p>
+</td>
+<td>
+<p class="no-indent">Κρίση της Ευρωζώνης</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2011</b></p></td>
-<td><p class="no-indent">Εμφύλιος πόλεμος στη Λιβύη</p></td>
+<td>
+<p class="no-indent"><b>2011</b></p>
+</td>
+<td>
+<p class="no-indent">Εμφύλιος πόλεμος στη Λιβύη</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2011</b></p></td>
-<td><p class="no-indent">Ξεκινά εμφύλιος πόλεμος στη Συρία</p></td>
+<td>
+<p class="no-indent"><b>2011</b></p>
+</td>
+<td>
+<p class="no-indent">Ξεκινά εμφύλιος πόλεμος στη Συρία</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2013</b></p></td>
-<td><p class="no-indent">Πραξικόπημα στην Αίγυπτο (Ιούλιος)</p></td>
+<td>
+<p class="no-indent"><b>2013</b></p>
+</td>
+<td>
+<p class="no-indent">Πραξικόπημα στην Αίγυπτο (Ιούλιος)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2015</b></p></td>
-<td><p class="no-indent">Το Ιράν υπογράφει πυρηνική συμφωνία με το Συμβούλιο Ασφαλείας του ΟΗΕ και κράτη μέλη της Ευρωπαϊκής Ένωσης</p></td>
+<td>
+<p class="no-indent"><b>2015</b></p>
+</td>
+<td>
+<p class="no-indent">Το Ιράν υπογράφει πυρηνική συμφωνία με το Συμβούλιο Ασφαλείας του ΟΗΕ και κράτη μέλη της Ευρωπαϊκής Ένωσης</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2016</b></p></td>
-<td><p class="no-indent">Το Ηνωμένο Βασίλειο γίνεται η πρώτη χώρα που αποχωρεί από την Ευρωπαϊκή Ένωση ύστερα από δημοψήφισμα</p></td>
+<td>
+<p class="no-indent"><b>2016</b></p>
+</td>
+<td>
+<p class="no-indent">Το Ηνωμένο Βασίλειο γίνεται η πρώτη χώρα που αποχωρεί από την Ευρωπαϊκή Ένωση ύστερα από δημοψήφισμα</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2017</b></p></td>
-<td><p class="no-indent">Ο Donald Trump ορίζεται πρόεδρος των ΗΠΑ (βλ. σ. 184)</p></td>
+<td>
+<p class="no-indent"><b>2017</b></p>
+</td>
+<td>
+<p class="no-indent">Ο Donald Trump ορίζεται πρόεδρος των ΗΠΑ (βλ. σ. 184)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2020</b></p></td>
-<td><p class="no-indent">Το Χονγκ Κονγκ επιβάλλει τον νόμο περί «εθνικής ασφάλειας», ενισχύοντας τον πολιτικό έλεγχο της Κίνας</p></td>
+<td>
+<p class="no-indent"><b>2020</b></p>
+</td>
+<td>
+<p class="no-indent">Το Χονγκ Κονγκ επιβάλλει τον νόμο περί «εθνικής ασφάλειας», ενισχύοντας τον πολιτικό έλεγχο της Κίνας</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2020-2021</b></p></td>
-<td><p class="no-indent">Ο κόσμος πλήττεται από τη θανατηφόρα πανδημία του κορονοϊού (βλ. σσ. 47-48)</p></td>
+<td>
+<p class="no-indent"><b>2020-2021</b></p>
+</td>
+<td>
+<p class="no-indent">Ο κόσμος πλήττεται από τη θανατηφόρα πανδημία του κορονοϊού (βλ. σσ. 47-48)</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -3488,29 +3720,53 @@ document.addEventListener("DOMContentLoaded", function() {
 <h2 class="aside-title" id="toc-769f07f8"><span class="box-label">ΓΕΓΟΝΟΤΑ</span> ΠΟΛΕΜΟΣ ΚΑΙ ΟΙΚΟΝΟΜΙΚΕΣ ΔΙΑΚΥΜΑΝΣΕΙΣ</h2>
 <table id="table028">
 <tbody>
-  <tr>
-    <td><p class="no-indent"><b>Σύγκρουση</b></p></td>
-    <td><p class="no-indent"><b>Οικονομικές επιπτώσεις</b></p></td>
-    </tr>
 <tr>
-<td><p class="no-indent"><b>Αμερικανικός Πόλεμος της Ανεξαρτησίας (1775-1783)</b></p></td>
-<td><p class="no-indent">Παρατεταμένη οικονομική ύφεση</p></td>
+<td>
+<p class="no-indent"><b>Σύγκρουση</b></p>
+</td>
+<td>
+<p class="no-indent"><b>Οικονομικές επιπτώσεις</b></p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>Ναπολεόντειοι Πόλεμοι (1803-1815)</b></p></td>
-<td><p class="no-indent">Δεκαετίες αποπληθωρισμού που χαρακτηρίζονταν από δαπανηρές επενδύσεις στη βιομηχανία και τη χρεοκοπία εταιρειών</p></td>
+<td>
+<p class="no-indent"><b>Αμερικανικός Πόλεμος της Ανεξαρτησίας (1775-1783)</b></p>
+</td>
+<td>
+<p class="no-indent">Παρατεταμένη οικονομική ύφεση</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>Πόλεμοι επανένωσης Ιταλίας (1815-1871) και Γερμανίας (1864-1871)</b></p></td>
-<td><p class="no-indent">Οι κερδοσκοπικές φούσκες των μέσων του 19ου αιώνα «έσκασαν», οδηγώντας πολλές εταιρείες στη χρεοκοπία και προκαλώντας την κατάρρευση (κραχ) των χρηματιστηρίων</p></td>
+<td>
+<p class="no-indent"><b>Ναπολεόντειοι Πόλεμοι (1803-1815)</b></p>
+</td>
+<td>
+<p class="no-indent">Δεκαετίες αποπληθωρισμού που χαρακτηρίζονταν από δαπανηρές επενδύσεις στη βιομηχανία και τη χρεοκοπία εταιρειών</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>Α΄ Παγκόσμιος Πόλεμος (1914-1918)</b></p></td>
-<td><p class="no-indent">Σύντομη φάση ανοικοδόμησης και άνθησης πριν από την κατάρρευση των μεγάλων δυτικών οικονομιών την περίοδο 1920-1921 και τη Μεγάλη Ύφεση του 1929</p></td>
+<td>
+<p class="no-indent"><b>Πόλεμοι επανένωσης Ιταλίας (1815-1871) και Γερμανίας (1864-1871)</b></p>
+</td>
+<td>
+<p class="no-indent">Οι κερδοσκοπικές φούσκες των μέσων του 19ου αιώνα «έσκασαν», οδηγώντας πολλές εταιρείες στη χρεοκοπία και προκαλώντας την κατάρρευση (κραχ) των χρηματιστηρίων</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>Πόλεμος της Κορέας (1950-1953) και Πόλεμος του Βιετνάμ (1955-1975)</b></p></td>
-<td><p class="no-indent">Αύξηση του πληθωρισμού, που αρχικά προκάλεσε τη μείωση και αργότερα την άνοδο των επιτοκίων, γεγονότα που, με τη σειρά τους, προκάλεσαν διακυμάνσεις (αυξήσεις και μειώσεις) στις βιομηχανικές επενδύσεις</p></td>
+<td>
+<p class="no-indent"><b>Α΄ Παγκόσμιος Πόλεμος (1914-1918)</b></p>
+</td>
+<td>
+<p class="no-indent">Σύντομη φάση ανοικοδόμησης και άνθησης πριν από την κατάρρευση των μεγάλων δυτικών οικονομιών την περίοδο 1920-1921 και τη Μεγάλη Ύφεση του 1929</p>
+</td>
+</tr>
+<tr>
+<td>
+<p class="no-indent"><b>Πόλεμος της Κορέας (1950-1953) και Πόλεμος του Βιετνάμ (1955-1975)</b></p>
+</td>
+<td>
+<p class="no-indent">Αύξηση του πληθωρισμού, που αρχικά προκάλεσε τη μείωση και αργότερα την άνοδο των επιτοκίων, γεγονότα που, με τη σειρά τους, προκάλεσαν διακυμάνσεις (αυξήσεις και μειώσεις) στις βιομηχανικές επενδύσεις</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -3595,60 +3851,116 @@ document.addEventListener("DOMContentLoaded", function() {
 <table id="table029">
 <tbody>
 <tr>
-<td><p class="no-indent"><b>1994-1995</b></p></td>
-<td><p class="no-indent">Ξεκινά η οικονομική κρίση στο Μεξικό με την ξαφνική υποτίμηση του μεξικανικού πέσο, επηρεάζοντας και άλλες χώρες της Λατινικής Αμερικής (το «φαινόμενο της τεκίλας»).</p></td>
+<td>
+<p class="no-indent"><b>1994-1995</b></p>
+</td>
+<td>
+<p class="no-indent">Ξεκινά η οικονομική κρίση στο Μεξικό με την ξαφνική υποτίμηση του μεξικανικού πέσο, επηρεάζοντας και άλλες χώρες της Λατινικής Αμερικής (το «φαινόμενο της τεκίλας»).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1997-1998</b></p></td>
-<td><p class="no-indent">Η χρηματοπιστωτική κρίση στην Ασία ξεκινά από την Ταϊλάνδη με την κατάρρευση του μπατ, αλλά εξαπλώνεται στο μεγαλύτερο τμήμα της Νοτιοανατολικής Ασίας και στην Ιαπωνία, όπου τα νομίσματα χάνουν αξία και τα χρηματιστήρια καταρρέουν.</p></td>
+<td>
+<p class="no-indent"><b>1997-1998</b></p>
+</td>
+<td>
+<p class="no-indent">Η χρηματοπιστωτική κρίση στην Ασία ξεκινά από την Ταϊλάνδη με την κατάρρευση του μπατ, αλλά εξαπλώνεται στο μεγαλύτερο τμήμα της Νοτιοανατολικής Ασίας και στην Ιαπωνία, όπου τα νομίσματα χάνουν αξία και τα χρηματιστήρια καταρρέουν.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1998</b></p></td>
-<td><p class="no-indent">Η χρηματοπιστωτική κρίση στη Ρωσία επιφέρει την κατάρρευση της χρηματιστηριακής αγοράς μετοχών, ομολόγων και συναλλάγματος στο πλαίσιο της πτώσης που σημειώνουν οι τιμές των βασικών εμπορευμάτων υπό την επίδραση της ασιατικής χρηματοπιστωτικής κρίσης.</p></td>
+<td>
+<p class="no-indent"><b>1998</b></p>
+</td>
+<td>
+<p class="no-indent">Η χρηματοπιστωτική κρίση στη Ρωσία επιφέρει την κατάρρευση της χρηματιστηριακής αγοράς μετοχών, ομολόγων και συναλλάγματος στο πλαίσιο της πτώσης που σημειώνουν οι τιμές των βασικών εμπορευμάτων υπό την επίδραση της ασιατικής χρηματοπιστωτικής κρίσης.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1999-2002</b></p></td>
-<td><p class="no-indent">Η οικονομική κρίση στην Αργεντινή αρχίζει με την απώλεια της επενδυτικής εμπιστοσύνης στην οικονομία στο πλαίσιο της μείωσης του ΑΕΠ, που οδηγεί στη διαφυγή κεφαλαίων από τη χώρα.</p></td>
+<td>
+<p class="no-indent"><b>1999-2002</b></p>
+</td>
+<td>
+<p class="no-indent">Η οικονομική κρίση στην Αργεντινή αρχίζει με την απώλεια της επενδυτικής εμπιστοσύνης στην οικονομία στο πλαίσιο της μείωσης του ΑΕΠ, που οδηγεί στη διαφυγή κεφαλαίων από τη χώρα.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2000</b></p></td>
-<td><p class="no-indent">Η επονομαζόμενη κρίση dot-com ισοδυναμεί με τη διάλυση της «φούσκας dot-com» μετά τη δραματική κερδοσκοπική άνοδο των μετοχών στον τομέα της πληροφορικής από το 1998.</p></td>
+<td>
+<p class="no-indent"><b>2000</b></p>
+</td>
+<td>
+<p class="no-indent">Η επονομαζόμενη κρίση dot-com ισοδυναμεί με τη διάλυση της «φούσκας dot-com» μετά τη δραματική κερδοσκοπική άνοδο των μετοχών στον τομέα της πληροφορικής από το 1998.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2002</b></p></td>
-<td><p class="no-indent">Κατά την τραπεζική κρίση στην Ουρουγουάη, οι επενδυτές απέσυραν μαζικά μεγάλο μέρος κεφαλαίων από τις τράπεζες εν μέσω ανησυχιών για τη σύνδεση της οικονομίας της χώρας με την οικονομική κατάρρευση της Αργεντινής.</p></td>
+<td>
+<p class="no-indent"><b>2002</b></p>
+</td>
+<td>
+<p class="no-indent">Κατά την τραπεζική κρίση στην Ουρουγουάη, οι επενδυτές απέσυραν μαζικά μεγάλο μέρος κεφαλαίων από τις τράπεζες εν μέσω ανησυχιών για τη σύνδεση της οικονομίας της χώρας με την οικονομική κατάρρευση της Αργεντινής.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2007-2008</b></p></td>
-<td><p class="no-indent">Η κρίση των ενυπόθηκων στεγαστικών δανείων υψηλού κινδύνου στις ΗΠΑ πυροδοτεί την παγκόσμια χρηματοπιστωτική κρίση.</p></td>
+<td>
+<p class="no-indent"><b>2007-2008</b></p>
+</td>
+<td>
+<p class="no-indent">Η κρίση των ενυπόθηκων στεγαστικών δανείων υψηλού κινδύνου στις ΗΠΑ πυροδοτεί την παγκόσμια χρηματοπιστωτική κρίση.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2007-2009</b></p></td>
-<td><p class="no-indent">Η παγκόσμια χρηματοπιστωτική κρίση.</p></td>
+<td>
+<p class="no-indent"><b>2007-2009</b></p>
+</td>
+<td>
+<p class="no-indent">Η παγκόσμια χρηματοπιστωτική κρίση.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2010-2013</b></p></td>
-<td><p class="no-indent">Η κρίση της ευρωζώνης (βλ. σ. 599).</p></td>
+<td>
+<p class="no-indent"><b>2010-2013</b></p>
+</td>
+<td>
+<p class="no-indent">Η κρίση της ευρωζώνης (βλ. σ. 599).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2010-</b></p></td>
-<td><p class="no-indent">Η κρίση στη Βενεζουέλα πυροδοτήθηκε εν μέρει από την πτώση των τιμών του πετρελαίου και τις μεγάλες ελλείψεις βασικών αγαθών στα τέλη της δεκαετίας του 2010.</p></td>
+<td>
+<p class="no-indent"><b>2010-</b></p>
+</td>
+<td>
+<p class="no-indent">Η κρίση στη Βενεζουέλα πυροδοτήθηκε εν μέρει από την πτώση των τιμών του πετρελαίου και τις μεγάλες ελλείψεις βασικών αγαθών στα τέλη της δεκαετίας του 2010.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2014-2015</b></p></td>
-<td><p class="no-indent">Ακόμα μία χρηματοπιστωτική κρίση ξεσπά στη Ρωσία, η οποία υπαγορεύτηκε από διάφορα οικονομικά και πολιτικά αίτια. Σε αυτά περιλαμβάνονταν η πτώση των τιμών του πετρελαίου, η υποτίμηση του ρουβλίου και οι κυρώσεις που επιβλήθηκαν στη χώρα ως απάντηση στην προσάρτηση της Κριμαίας που αποσπάστηκε από την Ουκρανία (βλ. σ. 202).</p></td>
+<td>
+<p class="no-indent"><b>2014-2015</b></p>
+</td>
+<td>
+<p class="no-indent">Ακόμα μία χρηματοπιστωτική κρίση ξεσπά στη Ρωσία, η οποία υπαγορεύτηκε από διάφορα οικονομικά και πολιτικά αίτια. Σε αυτά περιλαμβάνονταν η πτώση των τιμών του πετρελαίου, η υποτίμηση του ρουβλίου και οι κυρώσεις που επιβλήθηκαν στη χώρα ως απάντηση στην προσάρτηση της Κριμαίας που αποσπάστηκε από την Ουκρανία (βλ. σ. 202).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2014-2016</b></p></td>
-<td><p class="no-indent">Η οικονομική κρίση στη Βραζιλία προκλήθηκε εν μέρει από την επιβράδυνση της κινεζικής οικονομικής ανάπτυξης και την επίδρασή της στις βραζιλιάνικες εξαγωγές πρώτων υλών.</p></td>
+<td>
+<p class="no-indent"><b>2014-2016</b></p>
+</td>
+<td>
+<p class="no-indent">Η οικονομική κρίση στη Βραζιλία προκλήθηκε εν μέρει από την επιβράδυνση της κινεζικής οικονομικής ανάπτυξης και την επίδρασή της στις βραζιλιάνικες εξαγωγές πρώτων υλών.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2016</b></p></td>
-<td><p class="no-indent">Το αποτέλεσμα της ψηφοφορίας στο Ηνωμένο Βασίλειο υπέρ της αποχώρησης από την ΕΕ συνεπάγεται απότομη πτώση της αξίας της βρετανικής λίρας έναντι αυτής του αμερικανικού δολαρίου, του ευρώ και άλλων νομισμάτων, βυθίσεις από τις οποίες το βρετανικό νόμισμα δεν έχει ακόμα ανακάμψει. Η αβεβαιότητα σχετικά με τους όρους του Brexit έχει προκαλέσει συνεχή μεταβλητότητα στις συναλλαγματικές ισοτιμίες.</p></td>
+<td>
+<p class="no-indent"><b>2016</b></p>
+</td>
+<td>
+<p class="no-indent">Το αποτέλεσμα της ψηφοφορίας στο Ηνωμένο Βασίλειο υπέρ της αποχώρησης από την ΕΕ συνεπάγεται απότομη πτώση της αξίας της βρετανικής λίρας έναντι αυτής του αμερικανικού δολαρίου, του ευρώ και άλλων νομισμάτων, βυθίσεις από τις οποίες το βρετανικό νόμισμα δεν έχει ακόμα ανακάμψει. Η αβεβαιότητα σχετικά με τους όρους του Brexit έχει προκαλέσει συνεχή μεταβλητότητα στις συναλλαγματικές ισοτιμίες.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2020-</b></p></td>
-<td><p class="no-indent">Η επέλαση της παγκόσμιας πανδημίας του Covid-19 το 2020 σε συνδυασμό με τις συνεχιζόμενες επιπτώσεις της παγκόσμιας χρηματοπιστωτικής κρίσης που είχε εκδηλωθεί πριν από μια δεκαετία και το ξέσπασμα ενός μεγάλου πολέμου μεταξύ της Ρωσίας και της Ουκρανίας το 2022 έχουν οδηγήσει σε σημαντική παγκόσμια οικονομική αστάθεια.</p></td>
+<td>
+<p class="no-indent"><b>2020-</b></p>
+</td>
+<td>
+<p class="no-indent">Η επέλαση της παγκόσμιας πανδημίας του Covid-19 το 2020 σε συνδυασμό με τις συνεχιζόμενες επιπτώσεις της παγκόσμιας χρηματοπιστωτικής κρίσης που είχε εκδηλωθεί πριν από μια δεκαετία και το ξέσπασμα ενός μεγάλου πολέμου μεταξύ της Ρωσίας και της Ουκρανίας το 2022 έχουν οδηγήσει σε σημαντική παγκόσμια οικονομική αστάθεια.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -6995,68 +7307,132 @@ document.addEventListener("DOMContentLoaded", function() {
 <table id="table030">
 <tbody>
 <tr>
-<td><p class="no-indent"><b>1948</b></p></td>
-<td><p class="no-indent">Οικουμενική Διακήρυξη των Δικαιωμάτων του Ανθρώπου</p></td>
+<td>
+<p class="no-indent"><b>1948</b></p>
+</td>
+<td>
+<p class="no-indent">Οικουμενική Διακήρυξη των Δικαιωμάτων του Ανθρώπου</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1948</b></p></td>
-<td><p class="no-indent">Σύμβαση για τη Γενοκτονία (Σύμβαση για την Πρόληψη και την Καταστολή του Εγκλήματος της Γενοκτονίας) (τέθηκε σε ισχύ το 1951)</p></td>
+<td>
+<p class="no-indent"><b>1948</b></p>
+</td>
+<td>
+<p class="no-indent">Σύμβαση για τη Γενοκτονία (Σύμβαση για την Πρόληψη και την Καταστολή του Εγκλήματος της Γενοκτονίας) (τέθηκε σε ισχύ το 1951)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1949</b></p></td>
-<td><p class="no-indent">Συνθήκες Γενεύης για τη Μεταχείριση των Αιχμαλώτων Πολέμου και την Προστασία των Αμάχων σε Καιρό Πολέμου (τέθηκαν σε ισχύ το 1950)</p></td>
+<td>
+<p class="no-indent"><b>1949</b></p>
+</td>
+<td>
+<p class="no-indent">Συνθήκες Γενεύης για τη Μεταχείριση των Αιχμαλώτων Πολέμου και την Προστασία των Αμάχων σε Καιρό Πολέμου (τέθηκαν σε ισχύ το 1950)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1950</b></p></td>
-<td><p class="no-indent">Ευρωπαϊκή Σύμβαση για τα Δικαιώματα του Ανθρώπου (Σύμβαση για την Προστασία των Δικαιωμάτων του Ανθρώπου και των Θεμελιωδών Ελευθεριών) (τέθηκε σε ισχύ το 1953)</p></td>
+<td>
+<p class="no-indent"><b>1950</b></p>
+</td>
+<td>
+<p class="no-indent">Ευρωπαϊκή Σύμβαση για τα Δικαιώματα του Ανθρώπου (Σύμβαση για την Προστασία των Δικαιωμάτων του Ανθρώπου και των Θεμελιωδών Ελευθεριών) (τέθηκε σε ισχύ το 1953)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1951</b></p></td>
-<td><p class="no-indent">Σύμβαση για το Καθεστώς των Προσφύγων (τέθηκε σε ισχύ το 1954)</p></td>
+<td>
+<p class="no-indent"><b>1951</b></p>
+</td>
+<td>
+<p class="no-indent">Σύμβαση για το Καθεστώς των Προσφύγων (τέθηκε σε ισχύ το 1954)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1966</b></p></td>
-<td><p class="no-indent">Διεθνές Σύμφωνο για τα Ατομικά και Πολιτικά Δικαιώματα (τέθηκε σε ισχύ το 1976)</p></td>
+<td>
+<p class="no-indent"><b>1966</b></p>
+</td>
+<td>
+<p class="no-indent">Διεθνές Σύμφωνο για τα Ατομικά και Πολιτικά Δικαιώματα (τέθηκε σε ισχύ το 1976)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1966</b></p></td>
-<td><p class="no-indent">Διεθνές Σύμφωνο για τα Οικονομικά, Κοινωνικά και Πολιτιστικά Δικαιώματα (τέθηκε σε ισχύ το 1976)</p></td>
+<td>
+<p class="no-indent"><b>1966</b></p>
+</td>
+<td>
+<p class="no-indent">Διεθνές Σύμφωνο για τα Οικονομικά, Κοινωνικά και Πολιτιστικά Δικαιώματα (τέθηκε σε ισχύ το 1976)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1966</b></p></td>
-<td><p class="no-indent">Σύμβαση για την Εξάλειψη Κάθε Μορφής Φυλετικών Διακρίσεων (τέθηκε σε ισχύ το 1969)</p></td>
+<td>
+<p class="no-indent"><b>1966</b></p>
+</td>
+<td>
+<p class="no-indent">Σύμβαση για την Εξάλειψη Κάθε Μορφής Φυλετικών Διακρίσεων (τέθηκε σε ισχύ το 1969)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1975</b></p></td>
-<td><p class="no-indent">Διακήρυξη για την Προστασία Όλων των Προσώπων από τα Βασανιστήρια</p></td>
+<td>
+<p class="no-indent"><b>1975</b></p>
+</td>
+<td>
+<p class="no-indent">Διακήρυξη για την Προστασία Όλων των Προσώπων από τα Βασανιστήρια</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1979</b></p></td>
-<td><p class="no-indent">Σύμβαση για την Εξάλειψη Όλων των Μορφών Διακρίσεων κατά των Γυναικών (τέθηκε σε ισχύ το 1981)</p></td>
+<td>
+<p class="no-indent"><b>1979</b></p>
+</td>
+<td>
+<p class="no-indent">Σύμβαση για την Εξάλειψη Όλων των Μορφών Διακρίσεων κατά των Γυναικών (τέθηκε σε ισχύ το 1981)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1984</b></p></td>
-<td><p class="no-indent">Σύμβαση κατά των Βασανιστηρίων και Άλλων Τρόπων Σκληρής, Απάνθρωπης ή Ταπεινωτικής Μεταχείρισης ή Τιμωρίας (τέθηκε σε ισχύ το 1987)</p></td>
+<td>
+<p class="no-indent"><b>1984</b></p>
+</td>
+<td>
+<p class="no-indent">Σύμβαση κατά των Βασανιστηρίων και Άλλων Τρόπων Σκληρής, Απάνθρωπης ή Ταπεινωτικής Μεταχείρισης ή Τιμωρίας (τέθηκε σε ισχύ το 1987)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1990</b></p></td>
-<td><p class="no-indent">Σύμβαση για τα Δικαιώματα του Παιδιού (τέθηκε σε ισχύ το 1991)</p></td>
+<td>
+<p class="no-indent"><b>1990</b></p>
+</td>
+<td>
+<p class="no-indent">Σύμβαση για τα Δικαιώματα του Παιδιού (τέθηκε σε ισχύ το 1991)</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1993</b></p></td>
-<td><p class="no-indent">Διακήρυξη της Βιέννης για τα Ανθρώπινα Δικαιώματα</p></td>
+<td>
+<p class="no-indent"><b>1993</b></p>
+</td>
+<td>
+<p class="no-indent">Διακήρυξη της Βιέννης για τα Ανθρώπινα Δικαιώματα</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2000</b></p></td>
-<td><p class="no-indent">Χάρτης των Θεμελιωδών Δικαιωμάτων της Ευρωπαϊκής Ένωσης</p></td>
+<td>
+<p class="no-indent"><b>2000</b></p>
+</td>
+<td>
+<p class="no-indent">Χάρτης των Θεμελιωδών Δικαιωμάτων της Ευρωπαϊκής Ένωσης</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2007</b></p></td>
-<td><p class="no-indent">Διακήρυξη του ΟΗΕ για τα Δικαιώματα των Αυτόχθονων Λαών</p></td>
+<td>
+<p class="no-indent"><b>2007</b></p>
+</td>
+<td>
+<p class="no-indent">Διακήρυξη του ΟΗΕ για τα Δικαιώματα των Αυτόχθονων Λαών</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2008</b></p></td>
-<td><p class="no-indent">Διακήρυξη του ΟΗΕ για τα Ανθρώπινα Δικαιώματα, τον Σεξουαλικό Προσανατολισμό και την Έμφυλη Ταυτότητα</p></td>
+<td>
+<p class="no-indent"><b>2008</b></p>
+</td>
+<td>
+<p class="no-indent">Διακήρυξη του ΟΗΕ για τα Ανθρώπινα Δικαιώματα, τον Σεξουαλικό Προσανατολισμό και την Έμφυλη Ταυτότητα</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -7124,36 +7500,68 @@ document.addEventListener("DOMContentLoaded", function() {
 <table id="table031">
 <tbody>
 <tr>
-<td><p class="no-indent"><b>1991</b></p></td>
-<td><p class="no-indent"><i>Βόρειο Ιράκ</i>. Μετά τον Πόλεμο του Κόλπου, οι ΗΠΑ εξαπέλυσαν την επιχείρηση Provide Comfort (Επιχείρηση Παροχής Ανακούφισης), στόχος της οποίας ήταν η δημιουργία «ασφαλών καταφυγίων» για τους Κούρδους στο βόρειο Ιράκ μέσω της χάραξης μιας ζώνης απαγόρευσης πτήσεων που επιτηρούντο από αμερικανικά, βρετανικά και γαλλικά αεροσκάφη.</p></td>
+<td>
+<p class="no-indent"><b>1991</b></p>
+</td>
+<td>
+<p class="no-indent"><i>Βόρειο Ιράκ</i>. Μετά τον Πόλεμο του Κόλπου, οι ΗΠΑ εξαπέλυσαν την επιχείρηση Provide Comfort (Επιχείρηση Παροχής Ανακούφισης), στόχος της οποίας ήταν η δημιουργία «ασφαλών καταφυγίων» για τους Κούρδους στο βόρειο Ιράκ μέσω της χάραξης μιας ζώνης απαγόρευσης πτήσεων που επιτηρούντο από αμερικανικά, βρετανικά και γαλλικά αεροσκάφη.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1992</b></p></td>
-<td><p class="no-indent"><i>Σομαλία</i>. Ενώ η χώρα βρισκόταν στα πρόθυρα ανθρωπιστικής καταστροφής, ο ΟΗΕ ενέκρινε επέμβαση (Operation Restore Hope – Επιχείρηση Αποκατάστασης της Ελπίδας) με στόχο να δημιουργηθεί ένα προστατευμένο περιβάλλον για τη διεξαγωγή ανθρωπιστικών επιχειρήσεων στη νότια Σομαλία.</p></td>
+<td>
+<p class="no-indent"><b>1992</b></p>
+</td>
+<td>
+<p class="no-indent"><i>Σομαλία</i>. Ενώ η χώρα βρισκόταν στα πρόθυρα ανθρωπιστικής καταστροφής, ο ΟΗΕ ενέκρινε επέμβαση (Operation Restore Hope – Επιχείρηση Αποκατάστασης της Ελπίδας) με στόχο να δημιουργηθεί ένα προστατευμένο περιβάλλον για τη διεξαγωγή ανθρωπιστικών επιχειρήσεων στη νότια Σομαλία.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1994</b></p></td>
-<td><p class="no-indent"><i>Αϊτή</i>. Έπειτα από στρατιωτικό πραξικόπημα, εν μέσω μιας κατάστασης επιδεινούμενης ανομίας και ενόψει ενός διογκούμενου κύματος μετανάστευσης των Αϊτινών προς τις Ηνωμένες Πολιτείες, οι τελευταίες απέστειλαν 15.000 στρατιώτες με στόχο την αποκατάσταση της τάξης και την υποβοήθηση της εδραίωσης πολιτικής εξουσίας.</p></td>
+<td>
+<p class="no-indent"><b>1994</b></p>
+</td>
+<td>
+<p class="no-indent"><i>Αϊτή</i>. Έπειτα από στρατιωτικό πραξικόπημα, εν μέσω μιας κατάστασης επιδεινούμενης ανομίας και ενόψει ενός διογκούμενου κύματος μετανάστευσης των Αϊτινών προς τις Ηνωμένες Πολιτείες, οι τελευταίες απέστειλαν 15.000 στρατιώτες με στόχο την αποκατάσταση της τάξης και την υποβοήθηση της εδραίωσης πολιτικής εξουσίας.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1994</b></p></td>
-<td><p class="no-indent"><i>Ρουάντα</i>. Μετά τη γενοκτονία στη Ρουάντα και αφού το Επαναστατικό Λαϊκό Μέτωπο των Τούτσι απέκτησε τον έλεγχο σχεδόν ολόκληρης της χώρας, οι Γάλλοι δημιούργησαν έναν «ασφαλή διάδρομο» προκειμένου να διαφύγουν από τη χώρα οι πρόσφυγες Χούτου (Operation Turquoise – Επιχείρηση Turquoise).</p></td>
+<td>
+<p class="no-indent"><b>1994</b></p>
+</td>
+<td>
+<p class="no-indent"><i>Ρουάντα</i>. Μετά τη γενοκτονία στη Ρουάντα και αφού το Επαναστατικό Λαϊκό Μέτωπο των Τούτσι απέκτησε τον έλεγχο σχεδόν ολόκληρης της χώρας, οι Γάλλοι δημιούργησαν έναν «ασφαλή διάδρομο» προκειμένου να διαφύγουν από τη χώρα οι πρόσφυγες Χούτου (Operation Turquoise – Επιχείρηση Turquoise).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1999</b></p></td>
-<td><p class="no-indent"><i>Κόσσοβο</i>. Σε κλίμα φόβου για πιθανή «εθνοκάθαρση» του αλβανικού πληθυσμού, μια σειρά αεροπορικών βομβαρδισμών από τις δυνάμεις του ΝΑΤΟ υπό την ηγεσία των ΗΠΑ ανάγκασε τους Σέρβους να αποσύρουν τα στρατεύματά τους από το Κόσσοβο.</p></td>
+<td>
+<p class="no-indent"><b>1999</b></p>
+</td>
+<td>
+<p class="no-indent"><i>Κόσσοβο</i>. Σε κλίμα φόβου για πιθανή «εθνοκάθαρση» του αλβανικού πληθυσμού, μια σειρά αεροπορικών βομβαρδισμών από τις δυνάμεις του ΝΑΤΟ υπό την ηγεσία των ΗΠΑ ανάγκασε τους Σέρβους να αποσύρουν τα στρατεύματά τους από το Κόσσοβο.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1999</b></p></td>
-<td><p class="no-indent"><i>Ανατολικό Τιμόρ</i>. Καθώς η Ινδονησία κλιμάκωνε την πολιτική εκφοβισμού και ενέτεινε την καταστολή, μια εξουσιοδοτημένη από τον ΟΗΕ ειρηνευτική δύναμη υπό την ηγεσία της Αυστραλίας απέκτησε τον έλεγχο του νησιού από την Ινδονησία.</p></td>
+<td>
+<p class="no-indent"><b>1999</b></p>
+</td>
+<td>
+<p class="no-indent"><i>Ανατολικό Τιμόρ</i>. Καθώς η Ινδονησία κλιμάκωνε την πολιτική εκφοβισμού και ενέτεινε την καταστολή, μια εξουσιοδοτημένη από τον ΟΗΕ ειρηνευτική δύναμη υπό την ηγεσία της Αυστραλίας απέκτησε τον έλεγχο του νησιού από την Ινδονησία.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2000</b></p></td>
-<td><p class="no-indent"><i>Σιέρα Λεόνε</i>. Ύστερα από έναν παρατεταμένο εμφύλιο πόλεμο στη Σιέρα Λεόνε, η βρετανική κυβέρνηση απέστειλε μια μικρή δύναμη με στόχο αρχικά την προστασία των Βρετανών πολιτών. Εντέλει, οι δυνάμεις αυτές παρείχαν υποστήριξη στην εκλεγμένη κυβέρνηση κατά τον αγώνα της ενάντια στις επαναστατικές δυνάμεις που κατηγορούνταν για ωμότητες.</p></td>
+<td>
+<p class="no-indent"><b>2000</b></p>
+</td>
+<td>
+<p class="no-indent"><i>Σιέρα Λεόνε</i>. Ύστερα από έναν παρατεταμένο εμφύλιο πόλεμο στη Σιέρα Λεόνε, η βρετανική κυβέρνηση απέστειλε μια μικρή δύναμη με στόχο αρχικά την προστασία των Βρετανών πολιτών. Εντέλει, οι δυνάμεις αυτές παρείχαν υποστήριξη στην εκλεγμένη κυβέρνηση κατά τον αγώνα της ενάντια στις επαναστατικές δυνάμεις που κατηγορούνταν για ωμότητες.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2011</b></p></td>
-<td><p class="no-indent"><i>Λιβύη</i>. Εν μέσω λαϊκών εξεγέρσεων ενάντια στον πρόεδρο Gaddafi, ένας συνασπισμός υπό την ηγεσία των ΗΠΑ εξαπέλυσε πυραυλικές και αεροπορικές επιθέσεις κατά των λιβυκών δυνάμεων, ενώ το ΝΑΤΟ ανέλαβε σύντομα την ευθύνη για την αστυνόμευση της ζώνης απαγόρευσης πτήσεων (βλ. σσ. 419-420).</p></td>
+<td>
+<p class="no-indent"><b>2011</b></p>
+</td>
+<td>
+<p class="no-indent"><i>Λιβύη</i>. Εν μέσω λαϊκών εξεγέρσεων ενάντια στον πρόεδρο Gaddafi, ένας συνασπισμός υπό την ηγεσία των ΗΠΑ εξαπέλυσε πυραυλικές και αεροπορικές επιθέσεις κατά των λιβυκών δυνάμεων, ενώ το ΝΑΤΟ ανέλαβε σύντομα την ευθύνη για την αστυνόμευση της ζώνης απαγόρευσης πτήσεων (βλ. σσ. 419-420).</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -7358,16 +7766,28 @@ document.addEventListener("DOMContentLoaded", function() {
 <table id="table032">
 <tbody>
 <tr>
-<td><p class="no-indent"><b>1555</b></p></td>
-<td><p class="no-indent">Η Ειρήνη του Άουγκσμπουργκ: Μια σειρά από συνθήκες που, μεταξύ άλλων, επιβεβαίωναν την ανεξαρτησία των γερμανικών πριγκιπάτων από την Αγία Ρωμαϊκή Αυτοκρατορία και παρείχαν στους υπηκόους τους το δικαίωμα ελεύθερης επιλογής της θρησκείας τους.</p></td>
+<td>
+<p class="no-indent"><b>1555</b></p>
+</td>
+<td>
+<p class="no-indent">Η Ειρήνη του Άουγκσμπουργκ: Μια σειρά από συνθήκες που, μεταξύ άλλων, επιβεβαίωναν την ανεξαρτησία των γερμανικών πριγκιπάτων από την Αγία Ρωμαϊκή Αυτοκρατορία και παρείχαν στους υπηκόους τους το δικαίωμα ελεύθερης επιλογής της θρησκείας τους.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1648</b></p></td>
-<td><p class="no-indent">Η Ειρήνη της Βεστφαλίας: Αποτελούμενη από τις συνθήκες του Όσναμπρικ και του Μίνστερ, εγκαινίασε μια νέα πολιτική τάξη στην Κεντρική Ευρώπη στη βάση της αρχής της κρατικής κυριαρχίας (βλ. σσ. 31-32) και του δικαιώματος των μοναρχών να διατηρούν μόνιμο στρατό, να κατασκευάζουν οχυρώσεις και να φορολογούν τους πολίτες τους.</p></td>
+<td>
+<p class="no-indent"><b>1648</b></p>
+</td>
+<td>
+<p class="no-indent">Η Ειρήνη της Βεστφαλίας: Αποτελούμενη από τις συνθήκες του Όσναμπρικ και του Μίνστερ, εγκαινίασε μια νέα πολιτική τάξη στην Κεντρική Ευρώπη στη βάση της αρχής της κρατικής κυριαρχίας (βλ. σσ. 31-32) και του δικαιώματος των μοναρχών να διατηρούν μόνιμο στρατό, να κατασκευάζουν οχυρώσεις και να φορολογούν τους πολίτες τους.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1713</b></p></td>
-<td><p class="no-indent">Οι Συνθήκες της Ουτρέχτης: Οδήγησαν στην Ειρήνη της Ουτρέχτης, η οποία εδραίωσε την αρχή της κυριαρχίας, συνδέοντας την κυρίαρχη εξουσία με μια καθορισμένη εδαφική επικράτεια.</p></td>
+<td>
+<p class="no-indent"><b>1713</b></p>
+</td>
+<td>
+<p class="no-indent">Οι Συνθήκες της Ουτρέχτης: Οδήγησαν στην Ειρήνη της Ουτρέχτης, η οποία εδραίωσε την αρχή της κυριαρχίας, συνδέοντας την κυρίαρχη εξουσία με μια καθορισμένη εδαφική επικράτεια.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -8100,36 +8520,68 @@ document.addEventListener("DOMContentLoaded", function() {
 <table id="table033">
 <tbody>
 <tr>
-<td><p class="no-indent"><b>1970</b></p></td>
-<td><p class="no-indent">Τα πλούσια κράτη δεσμεύονται να υλοποιήσουν τον στόχο του ΟΗΕ, προσφέροντας το 0,7% του ΑΕΠ τους ως επίσημη βοήθεια στα φτωχότερα κράτη.</p></td>
+<td>
+<p class="no-indent"><b>1970</b></p>
+</td>
+<td>
+<p class="no-indent">Τα πλούσια κράτη δεσμεύονται να υλοποιήσουν τον στόχο του ΟΗΕ, προσφέροντας το 0,7% του ΑΕΠ τους ως επίσημη βοήθεια στα φτωχότερα κράτη.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1974</b></p></td>
-<td><p class="no-indent">Συντάσσεται η Διακήρυξη του ΟΗΕ για τη Νέα Διεθνή Οικονομική Τάξη Πραγμάτων, στην οποία αναλύεται η ανάγκη ριζικής αναδιανομής των πόρων από τον Βορρά στο Νότο, αλλά και η «αμοιβαιότητα των συμφερόντων».</p></td>
+<td>
+<p class="no-indent"><b>1974</b></p>
+</td>
+<td>
+<p class="no-indent">Συντάσσεται η Διακήρυξη του ΟΗΕ για τη Νέα Διεθνή Οικονομική Τάξη Πραγμάτων, στην οποία αναλύεται η ανάγκη ριζικής αναδιανομής των πόρων από τον Βορρά στο Νότο, αλλά και η «αμοιβαιότητα των συμφερόντων».</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1980</b></p></td>
-<td><p class="no-indent">Δημοσιεύεται η Έκθεση της Ανεξάρτητης Επιτροπής για τα ζητήματα της διεθνούς ανάπτυξης υπό την προεδρία του (πρώην Γερμανού καγκελαρίου) Willy Brandt, η οποία επισημαίνει εμφαντικά το βαθύ χάσμα ανάμεσα στον Βορρά και τον Νότο, αλλά και την «αμοιβαιότητα των συμφερόντων».</p></td>
+<td>
+<p class="no-indent"><b>1980</b></p>
+</td>
+<td>
+<p class="no-indent">Δημοσιεύεται η Έκθεση της Ανεξάρτητης Επιτροπής για τα ζητήματα της διεθνούς ανάπτυξης υπό την προεδρία του (πρώην Γερμανού καγκελαρίου) Willy Brandt, η οποία επισημαίνει εμφαντικά το βαθύ χάσμα ανάμεσα στον Βορρά και τον Νότο, αλλά και την «αμοιβαιότητα των συμφερόντων».</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1987</b></p></td>
-<td><p class="no-indent">Συντάσσεται η έκθεση Brundtland με τίτλο <em>Our Common Future</em> [Το κοινό μας μέλλον] από την Παγκόσμια Επιτροπή για το Περιβάλλον και την Ανάπτυξη. Η έκθεση υπογραμμίζει την αρχή της «βιώσιμης ανάπτυξης» και συνδέει την οικονομική μεγέθυνση και τη φτώχεια με την αυστηρότερη περιβαλλοντική προστασία.</p></td>
+<td>
+<p class="no-indent"><b>1987</b></p>
+</td>
+<td>
+<p class="no-indent">Συντάσσεται η έκθεση Brundtland με τίτλο <em>Our Common Future</em> [Το κοινό μας μέλλον] από την Παγκόσμια Επιτροπή για το Περιβάλλον και την Ανάπτυξη. Η έκθεση υπογραμμίζει την αρχή της «βιώσιμης ανάπτυξης» και συνδέει την οικονομική μεγέθυνση και τη φτώχεια με την αυστηρότερη περιβαλλοντική προστασία.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1992</b></p></td>
-<td><p class="no-indent">Πραγματοποιείται η Διάσκεψη του ΟΗΕ για το Περιβάλλον και την Ανάπτυξη, γνωστή και ως «Σύνοδος για τη Γη», που επιχειρεί να ενσωματώσει τη βιώσιμη ανάπτυξη σε ένα ευρύ φάσμα προτάσεων πολιτικής.</p></td>
+<td>
+<p class="no-indent"><b>1992</b></p>
+</td>
+<td>
+<p class="no-indent">Πραγματοποιείται η Διάσκεψη του ΟΗΕ για το Περιβάλλον και την Ανάπτυξη, γνωστή και ως «Σύνοδος για τη Γη», που επιχειρεί να ενσωματώσει τη βιώσιμη ανάπτυξη σε ένα ευρύ φάσμα προτάσεων πολιτικής.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2000</b></p></td>
-<td><p class="no-indent">Μέσω της ανάδειξης των Αναπτυξιακών Στόχων της Χιλιετίας, περίπου 189 κράτη και τουλάχιστον είκοσι τρεις διεθνείς οργανισμοί υπέγραψαν μια σειρά από τολμηρούς στόχους για τη μείωση της φτώχειας μέχρι το 2015 (βλ. σ. 471).</p></td>
+<td>
+<p class="no-indent"><b>2000</b></p>
+</td>
+<td>
+<p class="no-indent">Μέσω της ανάδειξης των Αναπτυξιακών Στόχων της Χιλιετίας, περίπου 189 κράτη και τουλάχιστον είκοσι τρεις διεθνείς οργανισμοί υπέγραψαν μια σειρά από τολμηρούς στόχους για τη μείωση της φτώχειας μέχρι το 2015 (βλ. σ. 471).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2005</b></p></td>
-<td><p class="no-indent">Η Σύνοδος Κορυφής της G8 στο ξενοδοχείο Γκλενίγκλς στη Σκωτία επικυρώνει την ενίσχυση της βοήθειας προς την Αφρική και υιοθετεί ένα πρόγραμμα διαγραφής του χρέους.</p></td>
+<td>
+<p class="no-indent"><b>2005</b></p>
+</td>
+<td>
+<p class="no-indent">Η Σύνοδος Κορυφής της G8 στο ξενοδοχείο Γκλενίγκλς στη Σκωτία επικυρώνει την ενίσχυση της βοήθειας προς την Αφρική και υιοθετεί ένα πρόγραμμα διαγραφής του χρέους.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2015</b></p></td>
-<td><p class="no-indent">Οι Αναπτυξιακοί Στόχοι της Χιλιετίας αντικαθίστανται από τους Στόχους Βιώσιμης Ανάπτυξης, οι οποίοι ισχύουν μέχρι το 2030.</p></td>
+<td>
+<p class="no-indent"><b>2015</b></p>
+</td>
+<td>
+<p class="no-indent">Οι Αναπτυξιακοί Στόχοι της Χιλιετίας αντικαθίστανται από τους Στόχους Βιώσιμης Ανάπτυξης, οι οποίοι ισχύουν μέχρι το 2030.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -8300,60 +8752,116 @@ document.addEventListener("DOMContentLoaded", function() {
 <table id="table034">
 <tbody>
 <tr>
-<td><p class="no-indent"><b>1946</b></p></td>
-<td><p class="no-indent">Με τη Διεθνή Σύμβαση για τη Ρύθμιση της Φαλαινοθηρίας ιδρύεται η Διεθνής Επιτροπή Φαλαινοθηρίας, στόχος της οποίας είναι η προστασία των μεγάλων φαλαινών με την επιβολή ενός διεθνούς μορατόριουμ για τη φαλαινοθηρία.</p></td>
+<td>
+<p class="no-indent"><b>1946</b></p>
+</td>
+<td>
+<p class="no-indent">Με τη Διεθνή Σύμβαση για τη Ρύθμιση της Φαλαινοθηρίας ιδρύεται η Διεθνής Επιτροπή Φαλαινοθηρίας, στόχος της οποίας είναι η προστασία των μεγάλων φαλαινών με την επιβολή ενός διεθνούς μορατόριουμ για τη φαλαινοθηρία.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1950</b></p></td>
-<td><p class="no-indent">Ιδρύεται ο Παγκόσμιος Μετεωρολογικός Οργανισμός ως εξειδικευμένος οργανισμός του ΟΗΕ για τη μετεωρολογία (τον καιρό και το κλίμα) και τις σχετικές γεωφυσικές επιστήμες.</p></td>
+<td>
+<p class="no-indent"><b>1950</b></p>
+</td>
+<td>
+<p class="no-indent">Ιδρύεται ο Παγκόσμιος Μετεωρολογικός Οργανισμός ως εξειδικευμένος οργανισμός του ΟΗΕ για τη μετεωρολογία (τον καιρό και το κλίμα) και τις σχετικές γεωφυσικές επιστήμες.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1959</b></p></td>
-<td><p class="no-indent">Υπογράφεται η Συνθήκη της Ανταρκτικής, που καθιστά την Ανταρκτική, τη μοναδική ήπειρο που δεν κατοικείται από μόνιμο πληθυσμό, πρωταπαγόρευτη περιοχή για επιστημονικούς σκοπούς.</p></td>
+<td>
+<p class="no-indent"><b>1959</b></p>
+</td>
+<td>
+<p class="no-indent">Υπογράφεται η Συνθήκη της Ανταρκτικής, που καθιστά την Ανταρκτική, τη μοναδική ήπειρο που δεν κατοικείται από μόνιμο πληθυσμό, πρωταπαγόρευτη περιοχή για επιστημονικούς σκοπούς.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1972</b></p></td>
-<td><p class="no-indent">Η Διάσκεψη του ΟΗΕ για το Περιβάλλον του Ανθρώπου στη Στοκχόλμη θέτει το θεμέλιο για την ανάπτυξη δράσεων με σκοπό την προστασία του περιβάλλοντος σε διεθνές επίπεδο και προετοιμάζει το έδαφος για την εγκαθίδρυση του Προγράμματος του ΟΗΕ για το Περιβάλλον.</p></td>
+<td>
+<p class="no-indent"><b>1972</b></p>
+</td>
+<td>
+<p class="no-indent">Η Διάσκεψη του ΟΗΕ για το Περιβάλλον του Ανθρώπου στη Στοκχόλμη θέτει το θεμέλιο για την ανάπτυξη δράσεων με σκοπό την προστασία του περιβάλλοντος σε διεθνές επίπεδο και προετοιμάζει το έδαφος για την εγκαθίδρυση του Προγράμματος του ΟΗΕ για το Περιβάλλον.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1973</b></p></td>
-<td><p class="no-indent">Η Σύμβαση για το Διεθνές Εμπόριο των Ειδών Άγριας Χλωρίδας και Πανίδας που Απειλούνται με Εξαφάνιση (CITES) έχει στόχο να διασφαλίσει ότι το διεθνές εμπόριο άγριων ζώων και φυτών δεν θα οδηγήσει στην εξαφάνισή τους.</p></td>
+<td>
+<p class="no-indent"><b>1973</b></p>
+</td>
+<td>
+<p class="no-indent">Η Σύμβαση για το Διεθνές Εμπόριο των Ειδών Άγριας Χλωρίδας και Πανίδας που Απειλούνται με Εξαφάνιση (CITES) έχει στόχο να διασφαλίσει ότι το διεθνές εμπόριο άγριων ζώων και φυτών δεν θα οδηγήσει στην εξαφάνισή τους.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1982</b></p></td>
-<td><p class="no-indent">Η Σύμβαση του ΟΗΕ για το Δίκαιο της Θάλασσας καθορίζει τα δικαιώματα και τις υποχρεώσεις των χωρών στους κόλπους του πλανήτη και τις κατευθυντήριες γραμμές για τη λειτουργία επιχειρήσεων για την προστασία του περιβάλλοντος και τη διαχείριση των θαλάσσιων φυσικών πόρων (τέθηκε σε ισχύ το 1994).</p></td>
+<td>
+<p class="no-indent"><b>1982</b></p>
+</td>
+<td>
+<p class="no-indent">Η Σύμβαση του ΟΗΕ για το Δίκαιο της Θάλασσας καθορίζει τα δικαιώματα και τις υποχρεώσεις των χωρών στους κόλπους του πλανήτη και τις κατευθυντήριες γραμμές για τη λειτουργία επιχειρήσεων για την προστασία του περιβάλλοντος και τη διαχείριση των θαλάσσιων φυσικών πόρων (τέθηκε σε ισχύ το 1994).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1985</b></p></td>
-<td><p class="no-indent">Η Σύμβαση της Βιέννης για την Προστασία της Στιβάδας του Όζοντος επιβεβαιώνει την ύπαρξη της «τρύπας» στη στιβάδα του όζοντος πάνω από την Ανταρκτική και θέτει στόχο τη μείωση των εκπομπών των χλωροφθοράνθρακων (τέθηκε σε ισχύ το 1987).</p></td>
+<td>
+<p class="no-indent"><b>1985</b></p>
+</td>
+<td>
+<p class="no-indent">Η Σύμβαση της Βιέννης για την Προστασία της Στιβάδας του Όζοντος επιβεβαιώνει την ύπαρξη της «τρύπας» στη στιβάδα του όζοντος πάνω από την Ανταρκτική και θέτει στόχο τη μείωση των εκπομπών των χλωροφθοράνθρακων (τέθηκε σε ισχύ το 1987).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1987</b></p></td>
-<td><p class="no-indent">Η έκθεση της Επιτροπής Brundtland αναδεικνύει την ιδέα της βιώσιμης ανάπτυξης.</p></td>
+<td>
+<p class="no-indent"><b>1987</b></p>
+</td>
+<td>
+<p class="no-indent">Η έκθεση της Επιτροπής Brundtland αναδεικνύει την ιδέα της βιώσιμης ανάπτυξης.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1987</b></p></td>
-<td><p class="no-indent">Το Πρωτόκολλο του Μόντρεαλ για τις ουσίες που καταστρέφουν τη στιβάδα του όζοντος προβλέπει τη σταδιακή μείωση μεγάλης κλίμακας εκπομπών χλωροφθοράνθρακα με στόχο την αποκατάσταση της στιβάδας του όζοντος μέχρι το 2050.</p></td>
+<td>
+<p class="no-indent"><b>1987</b></p>
+</td>
+<td>
+<p class="no-indent">Το Πρωτόκολλο του Μόντρεαλ για τις ουσίες που καταστρέφουν τη στιβάδα του όζοντος προβλέπει τη σταδιακή μείωση μεγάλης κλίμακας εκπομπών χλωροφθοράνθρακα με στόχο την αποκατάσταση της στιβάδας του όζοντος μέχρι το 2050.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1988</b></p></td>
-<td><p class="no-indent">Δημιουργήθηκε η Διακυβερνητική Επιτροπή για την Κλιματική Αλλαγή (βλ. σσ. 493-494), η οποία υποβάλλει εκθέσεις σχετικά με την εφαρμογή της Σύμβασης-πλαισίου του ΟΗΕ για την Κλιματική Αλλαγή.</p></td>
+<td>
+<p class="no-indent"><b>1988</b></p>
+</td>
+<td>
+<p class="no-indent">Δημιουργήθηκε η Διακυβερνητική Επιτροπή για την Κλιματική Αλλαγή (βλ. σσ. 493-494), η οποία υποβάλλει εκθέσεις σχετικά με την εφαρμογή της Σύμβασης-πλαισίου του ΟΗΕ για την Κλιματική Αλλαγή.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1992</b></p></td>
-<td><p class="no-indent">Η Διάσκεψη του ΟΗΕ για το Περιβάλλον και την Ανάπτυξη πραγματοποιείται στο Ρίο ντε Τζανέιρο. Γνωστή και ως «Σύνοδος για τη Γη», υιοθετεί μια σειρά από σχέδια για την κλιματική αλλαγή και τη βιοποικιλότητα και ιδρύει την Επιτροπή για τη Βιώσιμη Ανάπτυξη (CSD).</p></td>
+<td>
+<p class="no-indent"><b>1992</b></p>
+</td>
+<td>
+<p class="no-indent">Η Διάσκεψη του ΟΗΕ για το Περιβάλλον και την Ανάπτυξη πραγματοποιείται στο Ρίο ντε Τζανέιρο. Γνωστή και ως «Σύνοδος για τη Γη», υιοθετεί μια σειρά από σχέδια για την κλιματική αλλαγή και τη βιοποικιλότητα και ιδρύει την Επιτροπή για τη Βιώσιμη Ανάπτυξη (CSD).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1997</b></p></td>
-<td><p class="no-indent">Συντάσσεται το Πρωτόκολλο του Κιότο, που συνιστά μια νομικά δεσμευτική διεθνή συμφωνία για σταδιακή μείωση των εκπομπών αερίων του θερμοκηπίου (τέθηκε σε ισχύ το 2005).</p></td>
+<td>
+<p class="no-indent"><b>1997</b></p>
+</td>
+<td>
+<p class="no-indent">Συντάσσεται το Πρωτόκολλο του Κιότο, που συνιστά μια νομικά δεσμευτική διεθνή συμφωνία για σταδιακή μείωση των εκπομπών αερίων του θερμοκηπίου (τέθηκε σε ισχύ το 2005).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2009-2012</b></p></td>
-<td><p class="no-indent">Πραγματοποιήθηκαν Διασκέψεις του ΟΗΕ για την Κλιματική Αλλαγή στην Κοπεγχάγη, στο Κανκούν, στο Ντέρμπαν και στη Ντόχα για τη διαμόρφωση αντικατάστατου του Πρωτοκόλλου του Κιότο.</p></td>
+<td>
+<p class="no-indent"><b>2009-2012</b></p>
+</td>
+<td>
+<p class="no-indent">Πραγματοποιήθηκαν Διασκέψεις του ΟΗΕ για την Κλιματική Αλλαγή στην Κοπεγχάγη, στο Κανκούν, στο Ντέρμπαν και στη Ντόχα για τη διαμόρφωση αντικατάστατου του Πρωτοκόλλου του Κιότο.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2015-2016</b></p></td>
-<td><p class="no-indent">Οι διαπραγματεύσεις για τη Σύμβαση-πλαίσιο του ΟΗΕ για την Κλιματική Αλλαγή το 2015 οδήγησαν στη Συμφωνία του Παρισιού για το κλίμα, η οποία τέθηκε σε ισχύ το 2016.</p></td>
+<td>
+<p class="no-indent"><b>2015-2016</b></p>
+</td>
+<td>
+<p class="no-indent">Οι διαπραγματεύσεις για τη Σύμβαση-πλαίσιο του ΟΗΕ για την Κλιματική Αλλαγή το 2015 οδήγησαν στη Συμφωνία του Παρισιού για το κλίμα, η οποία τέθηκε σε ισχύ το 2016.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -9306,20 +9814,36 @@ document.addEventListener("DOMContentLoaded", function() {
 <table id="table035">
 <tbody>
 <tr>
-<td><p class="no-indent"><b>1942</b></p></td>
-<td><p class="no-indent">Διακήρυξη των Ηνωμένων Εθνών, μιας συμμαχίας είκοσι έξι κρατών που δεσμεύτηκαν να νικήσουν τις δυνάμεις του Άξονα.</p></td>
+<td>
+<p class="no-indent"><b>1942</b></p>
+</td>
+<td>
+<p class="no-indent">Διακήρυξη των Ηνωμένων Εθνών, μιας συμμαχίας είκοσι έξι κρατών που δεσμεύτηκαν να νικήσουν τις δυνάμεις του Άξονα.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1944</b></p></td>
-<td><p class="no-indent">Η Διάσκεψη του Νταμπάρτον Όουκς (Ηνωμένες Πολιτείες, Σοβιετική Ένωση, Ηνωμένο Βασίλειο και Κίνα) καθορίζει τους γενικούς στόχους και τη δομή του μελλοντικού ΟΗΕ.</p></td>
+<td>
+<p class="no-indent"><b>1944</b></p>
+</td>
+<td>
+<p class="no-indent">Η Διάσκεψη του Νταμπάρτον Όουκς (Ηνωμένες Πολιτείες, Σοβιετική Ένωση, Ηνωμένο Βασίλειο και Κίνα) καθορίζει τους γενικούς στόχους και τη δομή του μελλοντικού ΟΗΕ.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1945</b></p></td>
-<td><p class="no-indent">Ο Χάρτης του ΟΗΕ εγκρίνεται στο Σαν Φρανσίσκο από πενήντα κράτη (η Πολωνία δεν εκπροσωπήθηκε, αλλά υπέγραψε τον Χάρτη αργότερα και συγκαταλέγεται στα πενήντα ένα αρχικά μέλη του ΟΗΕ). Υπογράφηκε στο Σαν Φρανσίσκο στις 26 Ιουνίου 1945, ενώ η επίσημη έναρξη της λειτουργίας του οργανισμού έλαβε χώρα στις 24 Οκτωβρίου (ημερομηνία που είναι έκτοτε γνωστή ως Ημέρα των Ηνωμένων Εθνών).</p></td>
+<td>
+<p class="no-indent"><b>1945</b></p>
+</td>
+<td>
+<p class="no-indent">Ο Χάρτης του ΟΗΕ εγκρίνεται στο Σαν Φρανσίσκο από πενήντα κράτη (η Πολωνία δεν εκπροσωπήθηκε, αλλά υπέγραψε τον Χάρτη αργότερα και συγκαταλέγεται στα πενήντα ένα αρχικά μέλη του ΟΗΕ). Υπογράφηκε στο Σαν Φρανσίσκο στις 26 Ιουνίου 1945, ενώ η επίσημη έναρξη της λειτουργίας του οργανισμού έλαβε χώρα στις 24 Οκτωβρίου (ημερομηνία που είναι έκτοτε γνωστή ως Ημέρα των Ηνωμένων Εθνών).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1946</b></p></td>
-<td><p class="no-indent">Ο Trygve Lie (Νορβηγία) ορίζεται Γενικός Γραμματέας.</p></td>
+<td>
+<p class="no-indent"><b>1946</b></p>
+</td>
+<td>
+<p class="no-indent">Ο Trygve Lie (Νορβηγία) ορίζεται Γενικός Γραμματέας.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -9426,100 +9950,196 @@ document.addEventListener("DOMContentLoaded", function() {
 <table id="table036">
 <tbody>
 <tr>
-<td><p class="no-indent"><b>1948</b></p></td>
-<td><p class="no-indent">Υιοθετείται η Οικουμενική Διακήρυξη των Δικαιωμάτων του Ανθρώπου.</p></td>
+<td>
+<p class="no-indent"><b>1948</b></p>
+</td>
+<td>
+<p class="no-indent">Υιοθετείται η Οικουμενική Διακήρυξη των Δικαιωμάτων του Ανθρώπου.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1950</b></p></td>
-<td><p class="no-indent">Το Συμβούλιο Ασφαλείας εγκρίνει την ανάληψη στρατιωτικής δράσης στην Κορέα.</p></td>
+<td>
+<p class="no-indent"><b>1950</b></p>
+</td>
+<td>
+<p class="no-indent">Το Συμβούλιο Ασφαλείας εγκρίνει την ανάληψη στρατιωτικής δράσης στην Κορέα.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1950</b></p></td>
-<td><p class="no-indent">Δημιουργείται η θέση του Ύπατου Αρμοστή του ΟΗΕ για τους Πρόσφυγες.</p></td>
+<td>
+<p class="no-indent"><b>1950</b></p>
+</td>
+<td>
+<p class="no-indent">Δημιουργείται η θέση του Ύπατου Αρμοστή του ΟΗΕ για τους Πρόσφυγες.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1953</b></p></td>
-<td><p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο Dag Hammarskjöld (Σουηδία).</p></td>
+<td>
+<p class="no-indent"><b>1953</b></p>
+</td>
+<td>
+<p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο Dag Hammarskjöld (Σουηδία).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1956</b></p></td>
-<td><p class="no-indent">Η πρώτη ειρηνευτική δύναμη του ΟΗΕ αποστέλλεται στη Διώρυγα του Σουέζ.</p></td>
+<td>
+<p class="no-indent"><b>1956</b></p>
+</td>
+<td>
+<p class="no-indent">Η πρώτη ειρηνευτική δύναμη του ΟΗΕ αποστέλλεται στη Διώρυγα του Σουέζ.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1960</b></p></td>
-<td><p class="no-indent">Ο ΟΗΕ οργανώνει μια επιχείρηση στο Κονγκό με στόχο την επίτευξη της μετάβασης από τη βελγική εξουσία στην ανεξαρτησία.</p></td>
+<td>
+<p class="no-indent"><b>1960</b></p>
+</td>
+<td>
+<p class="no-indent">Ο ΟΗΕ οργανώνει μια επιχείρηση στο Κονγκό με στόχο την επίτευξη της μετάβασης από τη βελγική εξουσία στην ανεξαρτησία.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1961</b></p></td>
-<td><p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο U Thant (Βιρμανία – σημερινή Μιανμάρ).</p></td>
+<td>
+<p class="no-indent"><b>1961</b></p>
+</td>
+<td>
+<p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο U Thant (Βιρμανία – σημερινή Μιανμάρ).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1964</b></p></td>
-<td><p class="no-indent">Αποστέλλεται ειρηνευτική δύναμη του ΟΗΕ στην Κύπρο.</p></td>
+<td>
+<p class="no-indent"><b>1964</b></p>
+</td>
+<td>
+<p class="no-indent">Αποστέλλεται ειρηνευτική δύναμη του ΟΗΕ στην Κύπρο.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1965</b></p></td>
-<td><p class="no-indent">Ιδρύεται το Πρόγραμμα για την Ανάπτυξη του ΟΗΕ.</p></td>
+<td>
+<p class="no-indent"><b>1965</b></p>
+</td>
+<td>
+<p class="no-indent">Ιδρύεται το Πρόγραμμα για την Ανάπτυξη του ΟΗΕ.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1968</b></p></td>
-<td><p class="no-indent">Η Γενική Συνέλευση εγκρίνει τη Συνθήκη για τη Μη Διάδοση των Πυρηνικών Όπλων.</p></td>
+<td>
+<p class="no-indent"><b>1968</b></p>
+</td>
+<td>
+<p class="no-indent">Η Γενική Συνέλευση εγκρίνει τη Συνθήκη για τη Μη Διάδοση των Πυρηνικών Όπλων.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1971</b></p></td>
-<td><p class="no-indent">Η Λαϊκή Δημοκρατία της Κίνας αντικαθιστά τη Δημοκρατία της Κίνας (Ταϊβάν) στο Συμβούλιο Ασφαλείας.</p></td>
+<td>
+<p class="no-indent"><b>1971</b></p>
+</td>
+<td>
+<p class="no-indent">Η Λαϊκή Δημοκρατία της Κίνας αντικαθιστά τη Δημοκρατία της Κίνας (Ταϊβάν) στο Συμβούλιο Ασφαλείας.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1975</b></p></td>
-<td><p class="no-indent">Πραγματοποιείται η πρώτη Διάσκεψη του ΟΗΕ για τις Γυναίκες στην Πόλη του Μεξικού, εγκαινιάζοντας το Διεθνές Έτος των Γυναικών.</p></td>
+<td>
+<p class="no-indent"><b>1975</b></p>
+</td>
+<td>
+<p class="no-indent">Πραγματοποιείται η πρώτη Διάσκεψη του ΟΗΕ για τις Γυναίκες στην Πόλη του Μεξικού, εγκαινιάζοντας το Διεθνές Έτος των Γυναικών.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1972</b></p></td>
-<td><p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο Kurt Waldheim (Αυστρία).</p></td>
+<td>
+<p class="no-indent"><b>1972</b></p>
+</td>
+<td>
+<p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο Kurt Waldheim (Αυστρία).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1982</b></p></td>
-<td><p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο Javier Pérez de Cuéllar (Περού).</p></td>
+<td>
+<p class="no-indent"><b>1982</b></p>
+</td>
+<td>
+<p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο Javier Pérez de Cuéllar (Περού).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1990</b></p></td>
-<td><p class="no-indent">Η UNICEF συγκαλεί τη Παγκόσμια Σύνοδο για τα Παιδιά.</p></td>
+<td>
+<p class="no-indent"><b>1990</b></p>
+</td>
+<td>
+<p class="no-indent">Η UNICEF συγκαλεί τη Παγκόσμια Σύνοδο για τα Παιδιά.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1992</b></p></td>
-<td><p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο Boutros Boutros-Ghali (Αίγυπτος).</p></td>
+<td>
+<p class="no-indent"><b>1992</b></p>
+</td>
+<td>
+<p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο Boutros Boutros-Ghali (Αίγυπτος).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1992</b></p></td>
-<td><p class="no-indent">Το Συμβούλιο Ασφαλείας δημοσιεύει ένα έγγραφο με τίτλο <em>Ένας οδηγός για την ειρήνη</em>, αναδεικνύοντας νέες προσεγγίσεις στην επιβολή, στη διατήρηση και στην οικοδόμηση της ειρήνης.</p></td>
+<td>
+<p class="no-indent"><b>1992</b></p>
+</td>
+<td>
+<p class="no-indent">Το Συμβούλιο Ασφαλείας δημοσιεύει ένα έγγραφο με τίτλο <em>Ένας οδηγός για την ειρήνη</em>, αναδεικνύοντας νέες προσεγγίσεις στην επιβολή, στη διατήρηση και στην οικοδόμηση της ειρήνης.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1997</b></p></td>
-<td><p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο Kofi Annan (Γκάνα).</p></td>
+<td>
+<p class="no-indent"><b>1997</b></p>
+</td>
+<td>
+<p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο Kofi Annan (Γκάνα).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2000</b></p></td>
-<td><p class="no-indent">Η Γενική Συνέλευση υιοθετεί τους Αναπτυξιακούς Στόχους της Χιλιετίας.</p></td>
+<td>
+<p class="no-indent"><b>2000</b></p>
+</td>
+<td>
+<p class="no-indent">Η Γενική Συνέλευση υιοθετεί τους Αναπτυξιακούς Στόχους της Χιλιετίας.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2002</b></p></td>
-<td><p class="no-indent">Ιδρύεται το Διεθνές Ποινικό Δικαστήριο (βλ. σσ. 441-442).</p></td>
+<td>
+<p class="no-indent"><b>2002</b></p>
+</td>
+<td>
+<p class="no-indent">Ιδρύεται το Διεθνές Ποινικό Δικαστήριο (βλ. σσ. 441-442).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2005</b></p></td>
-<td><p class="no-indent">Ιδρύεται η Επιτροπή για την Οικοδόμηση της Ειρήνης.</p></td>
+<td>
+<p class="no-indent"><b>2005</b></p>
+</td>
+<td>
+<p class="no-indent">Ιδρύεται η Επιτροπή για την Οικοδόμηση της Ειρήνης.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2007</b></p></td>
-<td><p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο Ban Ki-moon (Νότια Κορέα).</p></td>
+<td>
+<p class="no-indent"><b>2007</b></p>
+</td>
+<td>
+<p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο Ban Ki-moon (Νότια Κορέα).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2015</b></p></td>
-<td><p class="no-indent">Η Γενική Συνέλευση υιοθετεί τους Στόχους Βιώσιμης Ανάπτυξης, που αντικαθιστούν τους Αναπτυξιακούς Στόχους της Χιλιετίας (βλ. σ. 471).</p></td>
+<td>
+<p class="no-indent"><b>2015</b></p>
+</td>
+<td>
+<p class="no-indent">Η Γενική Συνέλευση υιοθετεί τους Στόχους Βιώσιμης Ανάπτυξης, που αντικαθιστούν τους Αναπτυξιακούς Στόχους της Χιλιετίας (βλ. σ. 471).</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2017</b></p></td>
-<td><p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο António Guterres (Πορτογαλία).</p></td>
+<td>
+<p class="no-indent"><b>2017</b></p>
+</td>
+<td>
+<p class="no-indent">Διορίζεται Γενικός Γραμματέας του ΟΗΕ ο António Guterres (Πορτογαλία).</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -9883,40 +10503,76 @@ document.addEventListener("DOMContentLoaded", function() {
 <table id="table038">
 <tbody>
 <tr>
-<td><p class="no-indent"><b>1947</b></p></td>
-<td><p class="no-indent">Σαράντα επτά χώρες υπογράφουν τη συνθήκη για τη Γενική Συμφωνία Δασμών και Εμπορίου, η οποία τίθεται σε ισχύ την 1η Ιανουαρίου 1948.</p></td>
+<td>
+<p class="no-indent"><b>1947</b></p>
+</td>
+<td>
+<p class="no-indent">Σαράντα επτά χώρες υπογράφουν τη συνθήκη για τη Γενική Συμφωνία Δασμών και Εμπορίου, η οποία τίθεται σε ισχύ την 1η Ιανουαρίου 1948.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1949</b></p></td>
-<td><p class="no-indent">Λαμβάνει χώρα ο δεύτερος γύρος της Γενικής Συμφωνίας Δασμών και Εμπορίου στην Ανεσί της Γαλλίας.</p></td>
+<td>
+<p class="no-indent"><b>1949</b></p>
+</td>
+<td>
+<p class="no-indent">Λαμβάνει χώρα ο δεύτερος γύρος της Γενικής Συμφωνίας Δασμών και Εμπορίου στην Ανεσί της Γαλλίας.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1950</b></p></td>
-<td><p class="no-indent">Διεξάγεται ο τρίτος γύρος της Γενικής Συμφωνίας Δασμών και Εμπορίου στο Τορκί της Μεγάλης Βρετανίας.</p></td>
+<td>
+<p class="no-indent"><b>1950</b></p>
+</td>
+<td>
+<p class="no-indent">Διεξάγεται ο τρίτος γύρος της Γενικής Συμφωνίας Δασμών και Εμπορίου στο Τορκί της Μεγάλης Βρετανίας.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1955-1956</b></p></td>
-<td><p class="no-indent">Λαμβάνει χώρα ο τέταρτος γύρος της Γενικής Συμφωνίας Δασμών και Εμπορίου στη Γενεύη της Ελβετίας.</p></td>
+<td>
+<p class="no-indent"><b>1955-1956</b></p>
+</td>
+<td>
+<p class="no-indent">Λαμβάνει χώρα ο τέταρτος γύρος της Γενικής Συμφωνίας Δασμών και Εμπορίου στη Γενεύη της Ελβετίας.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1960-1962</b></p></td>
-<td><p class="no-indent">Λαμβάνει χώρα ο πέμπτος γύρος της Γενικής Συμφωνίας Δασμών και Εμπορίου, ο αποκαλούμενος γύρος του Dillon, που πήρε την ονομασία του από τον Αμερικανό υπουργό Εξωτερικών Douglas Dillon.</p></td>
+<td>
+<p class="no-indent"><b>1960-1962</b></p>
+</td>
+<td>
+<p class="no-indent">Λαμβάνει χώρα ο πέμπτος γύρος της Γενικής Συμφωνίας Δασμών και Εμπορίου, ο αποκαλούμενος γύρος του Dillon, που πήρε την ονομασία του από τον Αμερικανό υπουργό Εξωτερικών Douglas Dillon.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1964-1967</b></p></td>
-<td><p class="no-indent">Διεξάγεται ο γύρος του Kennedy, στο πλαίσιο του οποίου εξασφαλίζονται μειώσεις δασμών ύψους 40 δισεκατομμυρίων δολαρίων.</p></td>
+<td>
+<p class="no-indent"><b>1964-1967</b></p>
+</td>
+<td>
+<p class="no-indent">Διεξάγεται ο γύρος του Kennedy, στο πλαίσιο του οποίου εξασφαλίζονται μειώσεις δασμών ύψους 40 δισεκατομμυρίων δολαρίων.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1973-1979</b></p></td>
-<td><p class="no-indent">Διεξάγεται ο γύρος του Τόκιο, στο πλαίσιο του οποίου εξασφαλίζονται μειώσεις δασμών άνω των 300 δισεκατομμυρίων δολαρίων και μειώσεις μη δασμολογικών φραγμών.</p></td>
+<td>
+<p class="no-indent"><b>1973-1979</b></p>
+</td>
+<td>
+<p class="no-indent">Διεξάγεται ο γύρος του Τόκιο, στο πλαίσιο του οποίου εξασφαλίζονται μειώσεις δασμών άνω των 300 δισεκατομμυρίων δολαρίων και μειώσεις μη δασμολογικών φραγμών.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>1986-1993</b></p></td>
-<td><p class="no-indent">Πραγματοποιείται ο γύρος της Ουρουγουάης. Το εμπορικό σύστημα επεκτείνεται σε τομείς όπως οι υπηρεσίες και η πνευματική ιδιοκτησία, μεταρρυθμίζονται κανονισμοί για τη γεωργία και την κλωστοϋφαντουργία και επιτυγχάνεται συμφωνία για την ίδρυση του ΠΟΕ, που συστάθηκε το 1995.</p></td>
+<td>
+<p class="no-indent"><b>1986-1993</b></p>
+</td>
+<td>
+<p class="no-indent">Πραγματοποιείται ο γύρος της Ουρουγουάης. Το εμπορικό σύστημα επεκτείνεται σε τομείς όπως οι υπηρεσίες και η πνευματική ιδιοκτησία, μεταρρυθμίζονται κανονισμοί για τη γεωργία και την κλωστοϋφαντουργία και επιτυγχάνεται συμφωνία για την ίδρυση του ΠΟΕ, που συστάθηκε το 1995.</p>
+</td>
 </tr>
 <tr>
-<td><p class="no-indent"><b>2001</b></p></td>
-<td><p class="no-indent">Ο ΠΟΕ ξεκινά τον γύρο της Ντόχα. Ο γύρος δεν έχει ολοκληρωθεί είκοσι και πλέον χρόνια αργότερα.</p></td>
+<td>
+<p class="no-indent"><b>2001</b></p>
+</td>
+<td>
+<p class="no-indent">Ο ΠΟΕ ξεκινά τον γύρο της Ντόχα. Ο γύρος δεν έχει ολοκληρωθεί είκοσι και πλέον χρόνια αργότερα.</p>
+</td>
 </tr>
 </tbody>
 </table>
@@ -11826,9 +12482,6 @@ document.addEventListener("DOMContentLoaded", function() {
 <p class="bibliography">Zakaria, F. (1998), <i>From Wealth to Power</i>, Princeton, NJ: Princeton University Press.</p>
 <p class="bibliography">Zakaria, F. (2009), <i>The Post-American World</i>, New York: W. W. Norton &amp; Co.</p>
 <p class="bibliography">Žižek, S. (2009), <i>First As Tragedy, Then As Farce</i>, London: Verso.</p>
-
-
-
 <hr/> <section data-semantic-type="doc-footnotes" epub:type="footnotes">
 <ol>
 <li data-semantic-type="doc-footnote" epub:type="footnote" id="footnote-005">
@@ -11854,10 +12507,8 @@ document.addEventListener("DOMContentLoaded", function() {
 </ol>
 </section>
 </section>
-
 <section data-split="true" epub:type="index" role="doc-index">
 <h1 class="chapter" id="toc-ebe2eb59">Ευρετήριο βασικών όρων</h1>
-
 <ul class="index-list">
 <li><b>#MeToo κίνημα</b></li>
 <li><b>αγορά</b> (market)</li>
@@ -12253,9 +12904,7 @@ document.addEventListener("DOMContentLoaded", function() {
 <li><b>ψηφοφορία με ειδική πλειοψηφία</b> (qualified majority voting)</li>
 <li><b>ωφελιμισμός</b> (utilitarianism)</li>
 </ul>
-
 </section>
-
 <section data-split="true" epub:type="colophon">
 <h1 class="visually-hidden" id="toc-colophon">ΚΟΛΟΦΩΝΑΣ</h1>
 <p class="center flush w-75">
@@ -12265,26 +12914,75 @@ document.addEventListener("DOMContentLoaded", function() {
 </main>
 </div>
 <script>
-/* Sidebar open/close + active heading highlight (cleaned HTML only, not EPUB) */
+/* Sidebar open/close + active heading highlight + theme switcher (cleaned HTML only, not EPUB) */
 document.addEventListener("DOMContentLoaded", function() {
   var tocNav = document.getElementById("table-of-contents");
   if (!tocNav) return;
 
-  /* Close button */
+  /* ── Theme switcher ──────────────────────────────────────────────────── */
+  var themes = [
+    { id: "light", label: "☀", title: "Light" },
+    { id: "sepia", label: "◑", title: "Sepia" },
+    { id: "dark",  label: "☽", title: "Dark"  }
+  ];
+
+  var themeBar = document.createElement("div");
+  themeBar.className = "rx-theme-switcher";
+  themeBar.setAttribute("role", "group");
+  themeBar.setAttribute("aria-label", "Reading theme");
+
+  themes.forEach(function(t) {
+    var btn = document.createElement("button");
+    btn.className = "rx-theme-btn";
+    btn.dataset.theme = t.id;
+    btn.title = t.title;
+    btn.setAttribute("aria-label", t.title + " reading theme");
+    btn.textContent = t.label;
+    themeBar.appendChild(btn);
+  });
+
+  var tocTitle = tocNav.querySelector("h2");
+  if (tocTitle) tocTitle.after(themeBar);
+  else tocNav.insertBefore(themeBar, tocNav.firstChild);
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-rx-theme", theme);
+    themeBar.querySelectorAll(".rx-theme-btn").forEach(function(btn) {
+      btn.classList.toggle("rx-theme-btn--active", btn.dataset.theme === theme);
+    });
+    try { localStorage.setItem("rx-theme", theme); } catch(e) {}
+  }
+
+  /* Initial theme: saved preference > OS dark mode > light */
+  var saved = null;
+  try { saved = localStorage.getItem("rx-theme"); } catch(e) {}
+  if (saved && ["light", "sepia", "dark"].indexOf(saved) !== -1) {
+    applyTheme(saved);
+  } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    applyTheme("dark");
+  } else {
+    applyTheme("light");
+  }
+
+  themeBar.addEventListener("click", function(e) {
+    var btn = e.target.closest(".rx-theme-btn");
+    if (btn) applyTheme(btn.dataset.theme);
+  });
+
+  /* ── Sidebar close / open ────────────────────────────────────────────── */
   document.getElementById("toc-close").addEventListener("click", function() {
     tocNav.classList.remove("toc-visible");
     tocNav.style.display = "none";
     document.getElementById("toc-open").style.display = "block";
   });
 
-  /* Open button */
   document.getElementById("toc-open").addEventListener("click", function() {
     tocNav.classList.add("toc-visible");
     tocNav.style.display = "block";
     document.getElementById("toc-open").style.display = "none";
   });
 
-  /* Active heading highlight on scroll */
+  /* ── Active heading highlight on scroll ──────────────────────────────── */
   var tocLinks = document.querySelectorAll("#table-of-contents a[href^='#']");
   var headingEls = [];
   tocLinks.forEach(function(a) {
