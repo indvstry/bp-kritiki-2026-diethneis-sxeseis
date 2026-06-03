@@ -14,6 +14,7 @@ ul.index-list {
 	list-style: none;
 }
 ul.index-list li {
+	list-style: none;
 	margin-top: 0.2em;
 	break-inside: avoid;
 }
