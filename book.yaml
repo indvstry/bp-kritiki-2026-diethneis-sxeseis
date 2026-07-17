@@ -5,7 +5,7 @@
 # ── Pipeline status ───────────────────────────────────────────────────────────
 # Values: ready-to-pick | in-progress | in-review | proofing-internal | done
 status: in-review
-pass-number:                        # proofing iteration — set to 1 on first pass, increment each pass
+pass-number: 3                      # proofing iteration — set to 1 on first pass, increment each pass
 
 # ── Core identification ──────────────────────────────────────────────────────
 title: "Διεθνείς σχέσεις και πολιτική στην παγκόσμια εποχή"
