@@ -1,0 +1,33 @@
+/* proof.css — BROWSER PROOFING ONLY. Never embedded in the EPUB.
+
+   rx-pub convert builds the EPUB from rx-book-styles.css + overrides.css
+   only, so any rule here affects the browser preview but never the shipped
+   book. rx-pub clean auto-injects a <link> to this file when it exists next
+   to the output. Use it to reveal editorial scaffolding (section labels,
+   structure markers) while proofing, then have it vanish from the EPUB.
+
+   Pattern: give a heading class="visually-hidden proof-label". It is hidden
+   in the EPUB (kept in the DOM, still read by screen readers) but shown here,
+   outlined, so you can see where a section starts/ends while proofing. Add
+   c-toc-exclude if it should also stay out of the EPUB table of contents:
+
+     <h1 class="visually-hidden proof-label c-toc-exclude">Copyright</h1> */
+
+/* ── Reveal proof-labelled hidden headings ───────────────────────────── */
+.proof-label {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  clip: auto !important;
+  overflow: visible !important;
+  outline: 1px dashed #b000b0;
+  color: #b000b0;
+}
+
+/* ── Option: reveal ALL visually-hidden text (uncomment if preferred) ── */
+/* .visually-hidden {
+  position: static !important; width: auto !important; height: auto !important;
+  margin: 0 !important; clip: auto !important; overflow: visible !important;
+  outline: 1px dashed #b000b0; color: #b000b0;
+} */
