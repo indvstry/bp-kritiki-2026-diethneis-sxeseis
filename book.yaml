@@ -11,8 +11,8 @@ pass-number: 3                      # proofing iteration — set to 1 on first p
 title: "Διεθνείς σχέσεις και πολιτική στην παγκόσμια εποχή"
 subtitle: ""
 language: el
-isbn: "978-960-586-565-8"                 # EPUB ISBN
-print-isbn: "978-960-586-530-6"           # emitted as <dc:source>
+isbn-epub: "978-960-586-565-8"                 # EPUB ISBN
+isbn-print: "978-960-586-530-6"           # emitted as <dc:source>
 edition: 2                                # 2η ελληνική έκδοση
 
 # ── Creators ─────────────────────────────────────────────────────────────────
@@ -57,7 +57,7 @@ rights: "© 2025, 2013, Εκδόσεις Κριτική ΑΕ για την ελ�
 # ── Original work ────────────────────────────────────────────────────────────
 original-title: "Global Politics"
 original-language: en
-original-isbn: "978-1-350-32841-9"   # Bloomsbury 3rd ed. paperback (2023)
+isbn-original: "978-1-350-32841-9"   # Bloomsbury 3rd ed. paperback (2023)
 original-edition: 3                  # 3rd English edition (Bloomsbury, 2023)
 # Other Bloomsbury 3rd-ed ISBNs (for reference, not emitted):
 #   978-1-350-32842-6 (HB) · 978-1-350-32843-3 (PDF) · 978-1-350-32844-0 (EPUB)
