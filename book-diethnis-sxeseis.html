@@ -12999,20 +12999,41 @@ document.addEventListener("DOMContentLoaded", function() {
     if (el) headingEls.push({ link: a, el: el });
   });
 
+  var activeHeading = null;
+
   function updateActive() {
     var scrollY = window.scrollY || document.documentElement.scrollTop;
     var current = null;
     for (var i = 0; i < headingEls.length; i++) {
       if (headingEls[i].el.offsetTop <= scrollY + 80) current = headingEls[i];
+      else break;
     }
-    tocLinks.forEach(function(a) { a.classList.remove("toc-active"); });
+    if (current === activeHeading) return;
+    if (activeHeading) activeHeading.link.classList.remove("toc-active");
     if (current) {
       current.link.classList.add("toc-active");
       current.link.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
+    activeHeading = current;
   }
 
-  window.addEventListener("scroll", updateActive, { passive: true });
+  /* Coalesce to one layout read/write per animation frame — on long books
+     (hundreds of headings) reading .offsetTop on every raw scroll event
+     forces a layout reflow dozens of times a second, and re-triggering
+     scrollIntoView every tick stacks competing smooth-scroll animations
+     that fight the user's own scroll, causing jittery/stuck-feeling
+     trackpad scrolling. */
+  var scrollTicking = false;
+  function onScroll() {
+    if (scrollTicking) return;
+    scrollTicking = true;
+    window.requestAnimationFrame(function() {
+      scrollTicking = false;
+      updateActive();
+    });
+  }
+
+  window.addEventListener("scroll", onScroll, { passive: true });
   updateActive();
 });
 
