@@ -6,6 +6,7 @@
 # Values: ready-to-pick | in-progress | in-review | proofing-internal | done
 status: done
 pass-number: 3                      # proofing iteration — set to 1 on first pass, increment each pass
+typeset-folder: 2026-kritiki-soula/bp26-diethnis-sxeseis-heywood-2nd-ed-full-typeset   # typeset-files folder, relative to production-root (rx-pub sync-tags)
 
 # ── Core identification ──────────────────────────────────────────────────────
 title: "Διεθνείς σχέσεις και πολιτική στην παγκόσμια εποχή"
